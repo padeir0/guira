@@ -1,87 +1,108 @@
-class Builtin_Func:
-    def __init__(self, num_args, wrapper):
-        self.num_args = num_args
-        self.wrapper = wrapper
+from core import Error, Result, List, Number, Symbol, String, ListBuilder, Nil, nil
+import scopekind
 
-    def call(self, ctx, args):
-        if len(args) != self.num_args:
-            err = ctx.blank_error("invalid number of arguments")
-            return Result(None, err)
+# A Guira object can be of the types:
+#    Macro, Intrinsic_Macro,
+#    Function, Intrinsic_Function,
+#    Number, String, List,
+#    Nil.
 
-        obj = None
-        if self.num_args == 1:
-            obj = self.wrapper(args[0])
-        elif self.num_args == 2:
-            obj = self.wrapper(args[0], args[1])
-        elif self.num_args == 3:
-            obj = self.wrapper(args[0], args[1], args[2])
-        else:
-            err = ctx.blank_error("too many arguments")
-            return Result(None, err)
-        return Result(obj, None)
-
-class User_Function:
-    def __init__(self, name, formal_args, block, parent_scope):
+class Intrinsic_Function:
+    def __init__(self, name, wrapper):
         self.name = name
-        self.block = block
+        self.wrapper = wrapper
+    def call(self, ctx, args):
+        return self.wrapper(ctx, args)
+    def __str__(self):
+        return "#intrinsic-function:" + self.name
+
+class Function:
+    def __init__(self, name, formal_args, var_arg, body, parent_scope):
+        self.name = name
+        self.body = body
         self.formal_args = formal_args
         self.parent_scope = parent_scope
+        self.var_arg = var_arg
 
     def call(self, ctx, args):
-        if len(args) != len(self.formal_args):
+        if args.length() < self.formal_args.length():
+            return ctx.blank_error("invalid number of arguments")
+        if self.var_arg == None and args.length() > self.formal_args.length():
             return ctx.blank_error("invalid number of arguments")
 
-        s = Scope(self.parent_scope, scopekind.FUNCTION)
+        s = Scope(self.parent_scope, scopekind.Function)
         ctx.push_env(s)
         ctx.reset_return()
 
-        i = 0
-        while i < len(args):
-            name = self.formal_args[i]
-            obj = args[i]
+        curr_arg = args
+        curr_formal_arg = self.formal_args
+        while curr_arg != nil and curr_formal_arg != nil:
+            name = curr_formal_arg.head
+            obj = curr_arg.head
             ctx.add_symbol(name, obj)
-            i += 1
 
-        err = _eval_block(ctx, self.block)
-        if err != None:
-            return err
+            curr_formal_arg = curr_formal_arg.tail
+            curr_arg = curr_arg.tail
 
+        if curr_arg != nil and self.var_arg != nil:
+            ctx.add_symbol(self.var_arg, curr_arg)
+
+        res = eval(ctx, self.body)
         ctx.pop_env()
-        return None
+        return res
+
+    def __str__(self):
+        return "#function:" + self.name
 
 # Macros are first class. There are intrinsic macros:
-#     if  let  lambda  begin  quote  unquote  macro
-class Macro:
-    pass
+#     if  let  function  begin  quote  unquote  macro
 
-# A Guira_Object can be of the types:
-#    Macro,
-#    User_Function, Builtin_Function,
-#    Number, String, Boolean, List,
-#    Nil.
-class Guira_Object:
-    def __init__(self, kind, value, mutable):
-        self.kind = kind
-        self.value = value
-        self.mutable = mutable
-    def copy(self):
-        value = self.value
-        return Guira_Object(self.kind, value, self.mutable)
-    def is_kind(self, kind):
-        return self.kind == kind
-    def is_kinds(self, kinds):
-        return self.kind in kinds
-    def is_hashable(self):
-        kinds = [
-            objkind.BOOL, objkind.NUM, objkind.STR,
-            objkind.USER_OBJECT, objkind.USER_FUNCTION,
-            objkind.BUILTIN_FUNC, objkind.NONE,
-            objkind.MODULE,
-        ]
-        return self.is_kinds(kinds)
-    def set(self, kind, value):
-        self.kind = kind
-        self.value = value
+class Intrinsic_Macro:
+    def __init__(self, name, wrapper):
+        self.name = name
+        self.wrapper = wrapper
+    def call(self, ctx, args):
+        return self.wrapper(ctx, args)
+    def __str__(self):
+        return "#intrinsic-macro:" + self.name
+
+class Macro:
+    def __init__(self, name, formal_args, var_arg, body, parent_scope):
+        self.name = name
+        self.body = body
+        self.formal_args = formal_args
+        self.parent_scope = parent_scope
+        self.var_arg = var_arg
+
+    def call(self, ctx, args):
+        if args.length() < self.formal_args.length():
+            return ctx.blank_error("invalid number of arguments")
+        if self.var_arg == None and args.length() > self.formal_args.length():
+            return ctx.blank_error("invalid number of arguments")
+
+        s = Scope(self.parent_scope, scopekind.Macro)
+        ctx.push_env(s)
+        ctx.reset_return()
+
+        curr_arg = args
+        curr_formal_arg = self.formal_args
+        while curr_arg != nil and curr_formal_arg != nil:
+            name = curr_formal_arg.head
+            obj = curr_arg.head
+            ctx.add_symbol(name, obj)
+
+            curr_formal_arg = curr_formal_arg.tail
+            curr_arg = curr_arg.tail
+
+        if curr_arg != nil and self.var_arg != nil:
+            ctx.add_symbol(self.var_arg, curr_arg)
+
+        res = eval(ctx, self.body)
+        ctx.pop_env()
+        return res
+
+    def __str__(self):
+        return "#macro:" + self.name
 
 class Scope:
     def __init__(self, parent, kind):
@@ -127,11 +148,9 @@ class Call_Node:
         return str(self.curr_scope.dict)
 
 class Context:
-    def __init__(self, source_map, call_node, builtin_scope):
+    def __init__(self, builtin_scope):
         self.builtin_scope = builtin_scope
-        self.source_map = source_map
-        self.curr_call_node = call_node
-        self.evaluated_mods = {}
+        self.curr_call_node = Call_Node(None, builtin_scope)
         self.is_returning = False
         self.verbose = False
 
@@ -149,9 +168,11 @@ class Context:
         modname = self.find_module_name()
         return Error(modname, message, None)
 
-    def error(self, message, node):
+    def error(self, message, range):
         modname = self.find_module_name()
-        return Error(modname, message, node.range.copy())
+        if range != None:
+            range = range.copy()
+        return Error(modname, message, range)
 
     def push_env(self, scope):
         next = Call_Node(self.curr_call_node, scope)
@@ -184,8 +205,7 @@ class Context:
         return None
 
     def reset_return(self):
-        none = Guira_Object(objkind.NONE, None, True)
-        self.curr_call_node.parent.return_obj = none
+        self.curr_call_node.parent.return_obj = None
 
     def get_return(self):
         self.is_returning = False
@@ -209,3 +229,63 @@ class Context:
             out += "\n"
             curr = curr.parent
         return out
+
+def eval_each(ctx, list):
+    if type(list) is List:
+        curr = list
+        builder = ListBuilder()
+        while curr != nil:
+            if type(curr) is List:
+                res = eval(ctx, curr.head)
+                if res.failed():
+                    return res
+                builder.append_atom(res.value)
+                curr = curr.tail
+            else:
+                res = eval(ctx, curr)
+                if res.failed():
+                    return res
+                builder.append_atom(res.value)
+                curr = nil
+        list = builder.list()
+        return Result(list, None)
+    else:
+        return eval(ctx, list)
+
+def eval(ctx, expr):
+    if type(expr) is List:
+        res = eval(ctx, expr.head)
+        if res.failed():
+            return res
+        head = res.value
+
+        if type(head) is Macro:
+            res = head.call(ctx, expr.tail)
+            if res.failed():
+                return res
+            e = res.value
+            return eval(ctx, e)
+        elif type(head) is Intrinsic_Macro:
+            return head.call(ctx, expr.tail)
+        elif type(head) is Function or type(head) is Intrinsic_Function:
+            res = eval_each(ctx, expr.tail)
+            if res.failed():
+                return res
+            args = res.value
+            return head.call(ctx, args)
+        else:
+            if expr.tail == nil:
+                return Result(head, None)
+
+            msg = "symbol is not callable: "+head.__str__()
+            err = ctx.error(msg, head.range)
+            return Result(None, err)
+    elif type(expr) is Symbol:
+        res = ctx.retrieve(expr.symbol)
+        if res.failed():
+            msg = "symbol not found: "+ expr.__str__()
+            err = ctx.error(msg, expr.range)
+            return Result(None, err)
+        return res
+    else:
+        return Result(expr, None)

@@ -1,7 +1,9 @@
 #!/bin/python
 from parser import parse
 from lexer import lex
-from list import List, Symbol
+from core import List, Symbol, ListBuilder
+from evaluator import eval_each, eval, Call_Node, Context
+from intrinsics import build_scope
 import os
 import sys
 import traceback
@@ -67,11 +69,46 @@ def get_root_dir(file_path):
         return None
 
 def test():
-    a = Symbol("a")
-    b = Symbol("b")
-    c = Symbol("c")
-    list = List(List(a, List(b, None)), List(b, List(c, None)))
+    a = List(Symbol("a"), None)
+    b = List(Symbol("b"), None)
+    c = List(Symbol("c"), None)
+
+    builder = ListBuilder()
+    builder.append(a)
+    builder.append(b)
+    builder.append(c)
+    list = builder.list()
     print(list)
+
+def eval_file(file_path):
+    if not file_path.endswith(".guira"):
+        print("not a guira file")
+        return
+    root = get_root_dir(file_path)
+    if root == None:
+        print("invalid file path")
+        return
+    modname = os.path.basename(file_path)
+    modname = modname[:len(modname)-6] # removes ".guira"
+    files = get_guira_files(root)
+
+    builtins = build_scope()
+    ctx = Context(builtins)
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            file_contents = f.read()
+            res = parse(file_path, file_contents, False)
+            if res.failed():
+                print(res.error)
+            else:
+                res = eval_each(ctx, res.value)
+                if res.failed():
+                    print(res.error)
+                else:
+                    print(res.value)
+    except Exception:
+        print(f"Could not parse file {file_path}:\n{traceback.format_exc()}")
 
 def parse_file(file_path):
     try:
@@ -113,7 +150,7 @@ def test_whole_dir(folder_path):
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         file_path = sys.argv[1]
-        parse_file(file_path)
+        eval_file(file_path)
     elif len(sys.argv) == 3:
         keyword = sys.argv[1]
         if keyword == "test":

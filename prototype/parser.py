@@ -1,7 +1,6 @@
 import lexkind
 from lexer import Lexer
-from core import Result, Error, Range
-from list import ListBuilder, List, Symbol, Number, String, Boolean
+from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil
 from fractions import Fraction
 
 def parse(modname, string, track):
@@ -158,7 +157,7 @@ def _i_expr(parser):
         if block != None:
             list.append(block)
 
-    if list != None and list.tail == None:
+    if list != nil and list.tail == nil:
         return Result(list.head, None)
 
     return Result(list, None)
@@ -267,14 +266,14 @@ def _discard_nl(parser):
         parser.consume()
 
 def _pylist_to_list(pylist):
-    root = None
-    last = None
+    root = nil
+    last = nil
     for item in pylist:
-        if root == None:
-            root = List(item, None)
+        if root == nil:
+            root = List(item, nil)
             last = root
         else:
-            last.tail = List(item, None)
+            last.tail = List(item, nil)
             last = last.tail
     return root
 
@@ -284,5 +283,5 @@ def _pylist_to_leftlist(pylist):
         if last == None:
             last = item
         else:
-            last = List(last, List(item, None))
+            last = List(last, List(item, nil))
     return last
