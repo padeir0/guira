@@ -2,10 +2,14 @@
 
 Experimental Lisp with no parenthesis.
 
-<details><summary>Contents</summary>
+<details>
+
+<summary>Contents</summary>
+
 - [The List](#list)
 - [Syntax](#syntax)
 - [Goals](#goals)
+
 </details>
 
 ## The List <a name="list"></a>
