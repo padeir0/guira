@@ -1,0 +1,6 @@
+print 'hello, world!\n'
+print
+  cons 1 2
+
+print
+  cons 1 [cons 2 nil]

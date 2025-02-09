@@ -188,7 +188,7 @@ class Symbol:
         self.symbol = symbol
         self.range = None
     def __str__(self):
-        return self.symbol
+        return "'" + self.symbol
     def start_column(self):
         return self.range.start.column
     def compute_ranges(self):
@@ -217,7 +217,7 @@ class String:
         self.string = string
         self.range = None
     def __str__(self):
-        return "'" + self.string + "'"
+        return self.string
     def start_column(self):
         return self.range.start.column
     def compute_ranges(self):

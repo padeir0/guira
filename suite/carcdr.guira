@@ -1,0 +1,24 @@
+head
+  cons 1 2
+
+tail
+  cons 1 2
+
+head
+  tail [cons 1 [cons 2 nil]]
+
+head
+  head
+    cons [cons 1 [cons 2 nil]]
+         [cons 3 [cons 4 nil]]
+
+head
+  tail
+    cons [cons 1 [cons 2 nil]]
+         [cons 3 [cons 4 nil]]
+
+head
+  tail
+    tail
+      cons [cons 1 [cons 2 nil]]
+           [cons 3 [cons 4 nil]]
