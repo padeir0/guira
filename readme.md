@@ -1,6 +1,9 @@
 # Guira
 
-Experimental Lisp with no parenthesis.
+The goal of Guira is to be a minimalistic scripting language—
+small enough to be learned in a day,
+flexible enough to prototype any task,
+and fast enough to not be a nuisance.
 
 <details>
 
@@ -9,6 +12,7 @@ Experimental Lisp with no parenthesis.
 - [The List](#list)
 - [Syntax](#syntax)
 - [Goals](#goals)
+- [Concerns](#concerns)
 
 </details>
 
@@ -158,12 +162,9 @@ line-breaks inside `[]`, this is intentional
 since allowing it would create a mess,
 the syntax would be too flexible.
 
-## Goals <a name="goals"></a>
+## Concerns <a name="concerns"></a>
 
-The primary goal is experimentation, but it is possible that this
-language makes a nice shell, so I may steer in that direction.
-
-## Considerations
+### About the syntax
 
 We should allow usage of `()` and `{}` to behave
 as delimiters, just like `[]`. These will serve
@@ -205,3 +206,13 @@ if
 
 This may be overkill, but i think it is flexible enough
 to allow a C-like language.
+
+### About the performance
+
+Optimization is difficult with the presence of first class macros,
+but not impossible. Code representation can be compacted
+as nested arrays to provide better cache locality.
+Procedures can be especialized when no macro arguments
+are used. Profiling is necessary to make any decisions.
+If in the end there's no way to get good performance
+out of a simple language, add intrinsic superinstructions.
