@@ -1,0 +1,31 @@
+if [= 1 2]
+  print 'something is wrong'
+  print '1 != 2, as it should be'
+
+if [= 1 1]
+  print '1 == 1, as it should be'
+  print '1 != 1, there\'s something wrong'
+
+if [= [cons 1 2] [cons 1 2]]
+  print [cons 1 2] '=' [cons 1 2]
+  print 'something is wrong!'
+
+if [< 1 2 3 4]
+  print 'sequence is increasing'
+  print 'something is wrong'
+
+if [< 1 2 1 1]
+  print 'something is wrong'
+  print 'sequence is weird'
+
+if [<= 1 2 2 2]
+  print 'sequence is monotone'
+  print 'something is wrong'
+
+if [> 4 3 2 1]
+  print 'sequence is decreasing'
+  print 'something is wrong'
+
+if [>= 4 3 3 3]
+  print 'sequence is monotone'
+  print 'something is wrong'

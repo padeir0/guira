@@ -249,3 +249,6 @@ class ListBuilder:
 
     def list(self):
         return self.root
+
+false = nil
+true = Number(1, 0)

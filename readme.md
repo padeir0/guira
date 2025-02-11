@@ -163,3 +163,45 @@ the syntax would be too flexible.
 The primary goal is experimentation, but it is possible that this
 language makes a nice shell, so I may steer in that direction.
 
+## Considerations
+
+We should allow usage of `()` and `{}` to behave
+as delimiters, just like `[]`. These will serve
+as visual aid.
+
+We can allow `:` and `.` interchangeably for pairs.
+Such that `a.b` and `a:b` both equal to `[a b]`.
+But `a.b.c` should only be equal to `[a b c]`.
+
+This may open up space to write things such as:
+
+```
+proc max [{a b}:(big.num)] big.num
+     if [>= a b] a b
+```
+
+Furthermore, we may allow linebreaks inside delimiters,
+just like Python does, and we may allow continuation
+of a list in a single line using `\`.
+
+```
+array 0 1 2 3 4 \
+      5 6 7 8 9
+
+if
+  or very-very-very-very-big-condition.x \
+     very-very-very-very-big-condition.y \
+     very-very-very-very-big-condition.z
+  something-if-true
+  something-if-false
+
+# just normal lisp :)
+(if (or very-very-very-very-big-condition.x
+        very-very-very-very-big-condition.y
+        very-very-very-very-big-condition.z)
+    something-if-true
+    something-if-false)
+```
+
+This may be overkill, but i think it is flexible enough
+to allow a C-like language.
