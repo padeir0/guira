@@ -11,7 +11,6 @@ and fast enough to not be a nuisance.
 
 - [The List](#list)
 - [Syntax](#syntax)
-- [Goals](#goals)
 - [Concerns](#concerns)
 
 </details>
