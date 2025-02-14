@@ -2,7 +2,7 @@ from core import Error, Result, List, Number, Symbol, String, ListBuilder, Nil, 
 import scopekind
 
 # A Guira object can be of the types:
-#    Macro, Intrinsic_Macro,
+#    Form, Intrinsic_Form,
 #    Function, Intrinsic_Function,
 #    Number, String, List,
 #    Nil.
@@ -54,19 +54,19 @@ class Function:
     def __str__(self):
         return "#function:" + self.name
 
-# Macros are first class. There are intrinsic macros:
-#     if  let  function  begin  quote  unquote  macro
+# Forms are first class. There are intrinsic forms:
+#     if  let  function  begin  quote  unquote  form
 
-class Intrinsic_Macro:
+class Intrinsic_Form:
     def __init__(self, name, wrapper):
         self.name = name
         self.wrapper = wrapper
     def call(self, ctx, args):
         return self.wrapper(ctx, args)
     def __str__(self):
-        return "#intrinsic-macro:" + self.name
+        return "#intrinsic-form:" + self.name
 
-class Macro:
+class Form:
     def __init__(self, name, formal_args, var_arg, body, parent_scope):
         self.name = name
         self.body = body
@@ -80,7 +80,7 @@ class Macro:
         if self.var_arg == None and args.length() > self.formal_args.length():
             return ctx.blank_error("invalid number of arguments")
 
-        s = Scope(self.parent_scope, scopekind.Macro)
+        s = Scope(self.parent_scope, scopekind.Form)
         ctx.push_env(s)
         ctx.reset_return()
 
@@ -102,7 +102,7 @@ class Macro:
         return res
 
     def __str__(self):
-        return "#macro:" + self.name
+        return "#form:" + self.name
 
 class Scope:
     def __init__(self, parent, kind):
@@ -259,15 +259,9 @@ def eval(ctx, expr):
             return res
         head = res.value
 
-        if type(head) is Macro:
-            res = head.call(ctx, expr.tail)
-            if res.failed():
-                return res
-            e = res.value
-            return eval(ctx, e)
-        elif type(head) is Intrinsic_Macro:
+        if type(head) in [Form, Intrinsic_Form]:
             return head.call(ctx, expr.tail)
-        elif type(head) is Function or type(head) is Intrinsic_Function:
+        elif type(head) in [Function, Intrinsic_Function]:
             res = eval_each(ctx, expr.tail)
             if res.failed():
                 return res

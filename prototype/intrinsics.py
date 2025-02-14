@@ -1,5 +1,5 @@
 from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, true, false
-from evaluator import eval, Scope, Intrinsic_Function, Function, Macro, Intrinsic_Macro
+from evaluator import eval, Scope, Intrinsic_Function, Function, Form, Intrinsic_Form
 from fractions import Fraction
 import scopekind
 
@@ -82,6 +82,65 @@ def div_wrapper(ctx, list):
     n = Number(out, 0)
     return Result(n, None)
 
+def and_wrapper(ctx, list):
+    if list == nil:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+
+    curr = list
+    while curr != nil:
+        if type(curr) is List:
+            res = eval(ctx, curr.head)
+            curr = curr.tail
+        else:
+            res = eval(ctx, curr)
+            curr = nil
+        if res.failed():
+            return res
+        if res.value == false:
+            return Result(false, None)
+    return Result(true, None)
+
+def or_wrapper(ctx, list):
+    if list == nil:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+
+    curr = list
+    while curr != nil:
+        if type(curr) is List:
+            res = eval(ctx, curr.head)
+            curr = curr.tail
+        else:
+            res = eval(ctx, curr)
+            curr = nil
+        if res.failed():
+            return res
+        if res.value != false:
+            return Result(true, None)
+    return Result(false, None)
+
+def _not(obj):
+    out = None
+    if type(obj) is List:
+        out = obj.head
+    else:
+        out = obj
+
+    if out == false:
+        out = true
+    else:
+        out = false
+    return out
+
+def not_wrapper(ctx, list):
+    if list == nil or (type(list) is List and list.tail != nil):
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+
+    out = _not(list)
+    return Result(out, None)
+
 def eq_list(a, b):
     curr_a = a
     curr_b = b
@@ -114,7 +173,7 @@ def equals(a, b):
         return a.string == b.string
     if type(a) is Symbol:
         return a.symbol == b.symbol
-    if type(a) in [Intrinsic_Function, Function, Macro, Intrinsic_Macro]:
+    if type(a) in [Intrinsic_Function, Function, Form, Intrinsic_Form]:
         return a == b
     return False
 
@@ -136,7 +195,7 @@ def neq_wrapper(ctx, list):
     res = eq_wrapper(ctx, list)
     if res.failed():
         return res
-    res.value = not res.value
+    res.value = _not(res.value)
     return res
 
 def less_wrapper(ctx, list):
@@ -201,14 +260,14 @@ def greater_wrapper(ctx, list):
     res = less_eq_wrapper(ctx, list)
     if res.failed():
         return res
-    res.value = not res.value
+    res.value = _not(res.value)
     return res
 
 def greater_eq_wrapper(ctx, list):
     res = less_wrapper(ctx, list)
     if res.failed():
         return res
-    res.value = not res.value
+    res.value = _not(res.value)
     return res
 
 def cons_wrapper(ctx, list):
@@ -272,6 +331,21 @@ def print_wrapper(ctx, list):
     print(" ".join(out))
     return Result(nil, None)
 
+def debug_wrapper(ctx, list):
+    curr = list
+    out = []
+    while curr != nil:
+        if type(curr) is List:
+            fmt = str(type(curr.head))+":(" + curr.head.__str__()+")"
+            out += [fmt]
+            curr = curr.tail
+        else:
+            out += [curr.__str__()]
+            curr = nil
+
+    print(" ".join(out))
+    return Result(nil, None)
+
 def if_wrapper(ctx, list):
     if list == nil or list.length() != 3:
         err = ctx.error("invalid number of arguments", None)
@@ -291,6 +365,118 @@ def if_wrapper(ctx, list):
     else:
         return eval(ctx, true_expr)
 
+# function [a] [* a a]
+# function [a . b] [* a [apply + b]]
+def function_wrapper(ctx, list):
+    pass
+
+# form [a] [begin [let a_1 [eval a]] [* a_1 a_1]]
+def form_wrapper(ctx, list):
+    pass
+
+def _eval_unquoted(ctx, list):
+    if (type(list.head) is Symbol and
+        list.head.symbol == "unquote"):
+        return eval(ctx, list.tail)
+
+    root = List(list.head, nil)
+    out = root
+    curr = list.tail
+    while curr != nil:
+        if type(curr) is List:
+            if type(curr.head) is List:
+                res = _eval_unquoted(ctx, curr.head)
+                if res.failed():
+                    return res
+                res.value
+                out.tail = List(res.value, nil)
+                out = out.tail
+            else:
+                out.tail = List(curr.head, nil)
+                out = out.tail
+            curr = curr.tail
+        else:
+            out.tail = curr
+            curr = nil
+    return Result(root, None)
+
+# quasiquote expr
+def quote_wrapper(ctx, list):
+    if list == nil:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+    head = list
+    if type(list) is List:
+        head = list.head
+    if type(head) is List:
+        res = _eval_unquoted(ctx, head)
+        if res.failed():
+            return res
+        head = res.value
+    return Result(head, None)
+
+# here if evalued outside quote
+def unquote_wrapper(ctx, list):
+    if list == nil:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+    return eval(ctx, list)
+
+def let_wrapper(ctx, list):
+    if list == nil or list.length() != 2:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+
+    id_expr = list.head
+    value_expr = list.tail.head
+
+    if type(id_expr) != Symbol:
+        err = ctx.error("expected symbol", None)
+        return Result(None, err)
+    name = id_expr.symbol
+
+    res = eval(ctx, value_expr)
+    if res.failed():
+        return res
+    value = res.value
+
+    if ctx.retrieve(name).failed():
+        ctx.add_symbol(name, value)
+        return Result(nil, None)
+    else:
+        err = ctx.error("name already defined", None)
+        return Result(None, err)
+
+def begin_wrapper(ctx, list):
+    if list == nil:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+
+    out = None
+    curr = list
+    while curr != nil:
+        if type(curr) is List:
+            res = eval(ctx, curr.head)
+            curr = curr.tail
+        else:
+            res = eval(ctx, curr)
+            curr = nil
+        if res.failed():
+            return res
+
+        if curr == nil:
+            out = res.value
+
+    return Result(out, None)
+
+def add_function(scope, name, wrapper):
+    _temp = Intrinsic_Function(name, wrapper)
+    scope.add_symbol(name, _temp)
+
+def add_form(scope, name, wrapper):
+    _temp = Intrinsic_Form(name, wrapper)
+    scope.add_symbol(name, _temp)
+
 def build_scope():
     scope = Scope(None, scopekind.Intrinsic)
 
@@ -298,39 +484,35 @@ def build_scope():
     scope.add_symbol("true", true)
     scope.add_symbol("false", false)
 
-    _eq = Intrinsic_Function("=", eq_wrapper)
-    scope.add_symbol("=", _eq)
-    _neq = Intrinsic_Function("!=", neq_wrapper)
-    scope.add_symbol("!=", _neq)
-    _less = Intrinsic_Function("<", less_wrapper)
-    scope.add_symbol("<", _less)
-    _greater = Intrinsic_Function(">", greater_wrapper)
-    scope.add_symbol(">", _greater)
-    _less_eq = Intrinsic_Function("<=", less_eq_wrapper)
-    scope.add_symbol("<=", _less_eq)
-    _greater_eq = Intrinsic_Function(">=", greater_eq_wrapper)
-    scope.add_symbol(">=", _greater_eq)
+    add_form(scope, "let",     let_wrapper)
+    add_form(scope, "if",      if_wrapper)
+    add_form(scope, "begin",   begin_wrapper)
+    add_form(scope, "quote",   quote_wrapper)
+    add_form(scope, "unquote", unquote_wrapper)
 
-    _sum = Intrinsic_Function("+", sum_wrapper)
-    scope.add_symbol("+", _sum)
-    _minus = Intrinsic_Function("-", minus_wrapper)
-    scope.add_symbol("-", _minus)
-    _mult = Intrinsic_Function("*", mult_wrapper)
-    scope.add_symbol("*", _mult)
-    _div = Intrinsic_Function("/", div_wrapper)
-    scope.add_symbol("/", _div)
+    add_form(scope, "or",    or_wrapper)
+    add_form(scope, "and",   and_wrapper)
 
-    _cons = Intrinsic_Function("cons", cons_wrapper)
-    scope.add_symbol("cons", _cons)
-    _head = Intrinsic_Function("head", head_wrapper)
-    scope.add_symbol("head", _head)
-    _tail = Intrinsic_Function("tail", tail_wrapper)
-    scope.add_symbol("tail", _tail)
+    add_function(scope, "not",  not_wrapper)
 
-    _print = Intrinsic_Function("print", print_wrapper)
-    scope.add_symbol("print", _print)
+    add_function(scope, "=",  eq_wrapper)
+    add_function(scope, "!=", neq_wrapper)
+    add_function(scope, "<",  less_wrapper)
+    add_function(scope, ">",  greater_wrapper)
+    add_function(scope, "<=", less_eq_wrapper)
+    add_function(scope, ">=", greater_eq_wrapper)
 
-    _if = Intrinsic_Macro("if", if_wrapper)
-    scope.add_symbol("if", _if)
+    add_function(scope, "+", sum_wrapper)
+    add_function(scope, "-", minus_wrapper)
+    add_function(scope, "*", mult_wrapper)
+    add_function(scope, "/", div_wrapper)
+
+    add_function(scope, "cons", cons_wrapper)
+    add_function(scope, "head", head_wrapper)
+    add_function(scope, "tail", tail_wrapper)
+
+    add_function(scope, "eval", eval)
+    add_function(scope, "print", print_wrapper)
+    add_function(scope, "debug", debug_wrapper)
 
     return scope

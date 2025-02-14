@@ -1,6 +1,6 @@
 Invalid   = 0
 Function  = 1
-Macro     = 2
+Form     = 2
 Module    = 3
 Intrinsic = 4
 
@@ -9,8 +9,8 @@ def to_string(kind):
         return "Invalid"
     elif kind == Function:
         return "Function"
-    elif kind == Macro:
-        return "Macro"
+    elif kind == Form:
+        return "Form"
     elif kind == Module:
         return "Module"
     elif kind == Intrinsic:

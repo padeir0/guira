@@ -1,0 +1,24 @@
+if 
+  and true true true
+  print 'OK'
+  print 'FAIL'
+
+if 
+  and true false [print 'FAIL']
+  print 'FAIL'
+  print 'OK'
+
+if 
+  or true [print 'FAIL']
+  print 'OK'
+  print 'FAIL'
+
+if 
+  or false false
+  print 'FAIL'
+  print 'OK'
+
+if
+  and [not false] [not [not true]] true
+  print 'OK'
+  print 'FAIL'

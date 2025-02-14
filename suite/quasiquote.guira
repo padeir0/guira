@@ -1,0 +1,14 @@
+print
+  quote [1 2 3 4]
+  quote [1 2 [unquote [* 2 2]]]
+  quote
+    1 0 0 \
+    0 1 0 \
+    0 0 1
+
+if 
+  != [cons 1 [cons 2 3]]
+     [quote [1 2 . 3]]
+  print "fail"
+  print "ok"
+

@@ -3,7 +3,7 @@ import lexkind
 class Result:
     def __init__(self, value, error):
         if type(value) is Result:
-            raise
+            raise "nested results"
         self.value = value
         self.error = error
 
@@ -164,16 +164,19 @@ class List:
                 other_end = self.range.end
                 if other_end.more(self_end):
                     self.range.end = other_end.copy()
-
         return self.range
+
     def append(self, other):
+        self.last().tail = other
+
+    def last(self):
         curr = self
-        while curr != nil:
-            if curr.tail == nil:
-                curr.tail = other
-                curr = nil
-            else:
-                curr = curr.tail
+        if curr == nil:
+            return nil
+        while curr.tail != nil:
+            curr = curr.tail
+        return curr
+
     def length(self):
         curr = self
         i = 0

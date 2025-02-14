@@ -124,24 +124,37 @@ def _block(parser):
         if exp != None:
             leaves += [exp]
 
-    if len(leaves) == 0:
+    if leaves == None or len(leaves) == 0:
         return Result(None, None)
 
     list = _pylist_to_list(leaves)
     return Result(list, None)
 
-# I_Expr = Pair {Pair} [NL >Block].
+# TODO: implement list ending with ". Pair" of I_Expr too
+# I_Expr = Pairs {Line_Continue} [NL >Block].
 def _i_expr(parser):
     parser.track("_i_expr")
 
-    res = parser.repeat(_pair)
+    res = _pairs(parser)
     if res.failed():
         return res
-    leaves = res.value
-    if leaves == None:
-        return Result(None, None)
+    list = res.value
 
-    list = _pylist_to_list(leaves)
+    if type(list) != List:
+        list = List(list, nil)
+
+    end = list.last()
+    res = _line_continue(parser)
+    if res.failed():
+        return res
+    cont = res.value
+    while cont != None:
+        end.append(cont)
+        end = cont.last()
+        res = _line_continue(parser)
+        if res.failed():
+            return res
+        cont = res.value
 
     if parser.word_is(lexkind.NL):
         res = _NL(parser)
@@ -162,7 +175,39 @@ def _i_expr(parser):
 
     return Result(list, None)
 
-# Pair = Term {'.' Term}.
+# Line_Continue = '\\' NL Pairs.
+def _line_continue(parser):
+    if parser.word_is(lexkind.BACKSLASH):
+        res = parser.consume()
+        if res.failed():
+            return res
+        res = parser.expect(lexkind.NL, "newline")
+        if res.failed():
+            return res
+        return _pairs(parser)
+    return Result(None, None)
+
+# Pairs = Pair {Pair}.
+def _pairs(parser):
+    res = parser.expect_prod(_pair, "expression")
+    if res.failed():
+        return res
+    first = res.value
+
+    res = parser.repeat(_pair)
+    if res.failed():
+        return res
+    pylist = res.value
+    if pylist == None or len(pylist) == 0:
+        return Result(first, None)
+    list = _pylist_to_list(res.value)
+
+    if type(first) != List:
+        first = List(first, nil)
+    first.append(list)
+    return Result(first, None)
+
+# Pair = Term {':' Term}.
 def _pair(parser):
     parser.track("_pair")
     res = _term(parser)
@@ -175,14 +220,14 @@ def _pair(parser):
         return res
     if res.value != None:
         leaves = [first] + res.value
-        list = _pylist_to_leftlist(leaves)
+        list = _pylist_to_list(leaves)
         return Result(list, None)
     return Result(first, None)
 
-# '.' Term
+# ':' Term
 def _dot_term(parser):
     parser.track("_dot_term")
-    if parser.word_is(lexkind.DOT):
+    if parser.word_is(lexkind.COLON):
         res = parser.consume()
         if res.failed():
             return res
@@ -200,7 +245,7 @@ def _term(parser):
     else:
         return _atom(parser)
 
-# S_Expr = '[' {Pair} ']'.
+# S_Expr = '[' Pairs ['.' Pair] ']'.
 def _s_expr(parser):
     parser.track("_s_expr")
     res = parser.expect(lexkind.LEFT_DELIM, "[")
@@ -208,10 +253,18 @@ def _s_expr(parser):
         return res
     left_delim = res.value
 
-    res = parser.repeat(_pair)
+    res = _pairs(parser)
     if res.failed():
         return res
-    list = _pylist_to_list(res.value)
+    list = res.value
+    if parser.word_is(lexkind.DOT):
+        res = parser.consume()
+        if res.failed():
+            return res
+        res = parser.expect_prod(_pair, "expression")
+        if res.failed():
+            return res
+        list.append(res.value)
 
     res = parser.expect(lexkind.RIGHT_DELIM, "]")
     if res.failed():
@@ -276,12 +329,3 @@ def _pylist_to_list(pylist):
             last.tail = List(item, nil)
             last = last.tail
     return root
-
-def _pylist_to_leftlist(pylist):
-    last = None
-    for item in pylist:
-        if last == None:
-            last = item
-        else:
-            last = List(last, List(item, nil))
-    return last

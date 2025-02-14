@@ -2,15 +2,17 @@ INVALID = -1
 
 NUM = 0
 STR = 1
-ID = 2
+ID  = 2
 
-LEFT_DELIM = 3
-RIGHT_DELIM = 4
+LEFT_DELIM    = 3
+RIGHT_DELIM   = 4
 
-DOT = 5
+DOT       = 5
+COLON     = 6
+BACKSLASH = 7
 
-NL = 6
-EOF = 7
+NL = 8
+EOF = 9
 
 def to_string(kind):
     if kind == INVALID:
@@ -30,6 +32,10 @@ def to_string(kind):
 
     elif kind == DOT:
         return "DOT"
+    elif kind == COLON:
+        return "COLON"
+    elif kind == BACKSLASH:
+        return "BACKSLASH"
 
     elif kind == NL:
         return "NL"

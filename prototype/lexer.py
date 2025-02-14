@@ -125,8 +125,8 @@ class Lexer:
             return self._number()
         elif _is_ident_begin(r):
             return self._identifier()
-        elif r == "'":
-            return self._str()
+        elif r == "'" or r == "\"":
+            return self._str(r)
         elif r == "[":
             self._next_rune()
             return self._emit(lexkind.LEFT_DELIM)
@@ -136,6 +136,12 @@ class Lexer:
         elif r == ".":
             self._next_rune()
             return self._emit(lexkind.DOT)
+        elif r == ":":
+            self._next_rune()
+            return self._emit(lexkind.COLON)
+        elif r == "\\":
+            self._next_rune()
+            return self._emit(lexkind.BACKSLASH)
         elif r == "\n":
             self._next_rune()
             return self._emit(lexkind.NL)
@@ -166,15 +172,18 @@ class Lexer:
             self._next_rune()
         self._integer()
         r = self._peek_rune()
-        if r in ['.', '/']:
+        if r == '.':
             self._next_rune()
             self._integer()
             r = self._peek_rune()
-        if r == 'e':
-            self._next_rune()
-            r = self._peek_rune()
-            if r == "~":
+            if r == 'e':
                 self._next_rune()
+                r = self._peek_rune()
+                if r == "~":
+                    self._next_rune()
+                self._integer()
+        elif r == '/':
+            self._next_rune()
             self._integer()
         return self._emit(lexkind.NUM)
 
@@ -207,9 +216,9 @@ class Lexer:
             r = self._peek_rune()
         return self._emit(lexkind.ID)
 
-    def _str(self):
+    def _str(self, c):
         r = self._peek_rune()
-        if r == "\'":
+        if r == c:
             self._next_rune()
             r = self._peek_rune()
         ok = True
@@ -221,9 +230,9 @@ class Lexer:
             if r == "\\":
                 self._next_rune()
                 r = self._peek_rune()
-                if not (r in ["n", "\'", "\\"]):
+                if not (r in ["n", "\'", "\"", "\\"]):
                     return self._emit(lexkind.INVALID)
-            elif r == "\'":
+            elif r == c:
                 ok = False
 
             self._next_rune()
@@ -243,6 +252,8 @@ def _process_str(s):
                 out += "\n"
             elif r == "'":
                 out += "'"
+            elif r == "\"":
+                out += "\""
             elif r == "\\":
                 out += "\\"
         else:

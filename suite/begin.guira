@@ -1,0 +1,6 @@
+if
+  begin
+    print 'OK'
+    true
+  print 'OK'
+  print 'FAIL'

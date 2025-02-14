@@ -1,9 +1,9 @@
 # Guira
 
-The goal of Guira is to be a minimalistic scripting language—
-small enough to be learned in a day,
-flexible enough to prototype any task,
-and fast enough to not be a nuisance.
+The goal of Guira is to be a minimalistic scripting language:
+quick to learn, flexible and not too slow.
+It is an impure Lisp-1 based on I-Expressions that
+uses FEXPRs instead of macros.
 
 <details>
 
@@ -11,7 +11,7 @@ and fast enough to not be a nuisance.
 
 - [The List](#list)
 - [Syntax](#syntax)
-- [Concerns](#concerns)
+- [Future](#future)
 
 </details>
 
@@ -45,22 +45,16 @@ f
   c
   d
 
-f a.b c d
+f [a b] \
+  c d
 
-f a.b
+f:[a b]:c:d
+
+f a:b c d
+
+f a:b
   c
   d
-```
-
-Now, consider `(((a b) c) d)`,
-in Guira, all of the following are equivalent.
-
-```
-[[[a b] c] d]
-
-[[a b] c] d
-
-a.b.c.d
 ```
 
 Furthermore, if we consider `((a b) (c d) (e f))`,
@@ -69,9 +63,9 @@ in Guira, we have:
 ```
 [[a b] [c d] [e f]]
 
-[a.b c.d e.f]
+[a:b c:d e:f]
 
-a.b c.d e.f
+a:b c:d e:f
 ```
 
 We can also go further and write `(((a b) (c d)) ((e f) (g h)))`
@@ -80,7 +74,7 @@ as:
 ```
 [[[a b] [c d]] [[e f] [g h]]]
 [[a b] [c d]] [[e f] [g h]]
-[a b].[c d] [e f].[g h]
+[a b]:[c d] [e f]:[g h]
 ```
 
 ## Syntax <a name="syntax"></a>
@@ -112,25 +106,30 @@ Comment = '#' {not_newline_char} '\n'.
 Program = Block.
 Block = {:I_Expr NL}.
 
-I_Expr = Pair {Pair} [NL >Block].
-Pair = Term {'.' Term}.
+I_Expr = Pairs (End | {Line_Continue} [End | NL >Block]).
+Line_Continue = '\\' NL Pairs.
+Pairs = Pair {Pair}.
+End = '.' Pair.
+Pair = Term {':' Term}.
 Term = Atom | S_Expr.
-S_Expr = '[' {Pair} ']'.
+S_Expr = '[' Pairs [End] ']'.
 
 NL = '\n' {'\n'}.
 Atom = id | num | str.
 
-str = /'[\u0000-\uFFFF]*'/.
+str = sq_str | dq_str.
+sq_str = /'[\u0000-\uFFFF]*'/.
+dq_str = /"[\u0000-\uFFFF]*"/.
 
 id = ident_begin {ident_continue}.
 ident_begin = /[a-zA-Z_<>\?=!\-\+\*\/\%\$]/.
 ident_continue = ident_begin | digit.
 
 num = hex | bin | dec.
-dec = [neg] integer [frac | float] [exp].
+dec = [neg] integer [frac | float].
 integer = digit {digit_}.
 frac = '/' integer.
-float = '.' integer.
+float = '.' integer [exp].
 exp = 'e' [neg] integer.
 
 hex = '0x' hexdigits.
@@ -143,75 +142,18 @@ digit = /[0-9]/.
 digit_ = digit | '_'.
 ```
 
-Note that `.` can be used to implement autocompletion.
-For example: `module.symbol`.
-It can also be chained, like
-`module.struct.field` (which means `[[module struct] field]`).
+## Future
 
-Note also that `.`, `[`, `]`, spaces and linebreaks
-need no Shift nor Ctrl keys to type,
-although identifiers may carry hard-to-type symbols,
-their use is completely optional.
-This means that, when we compare this with S-Expressions,
-not only do we pollute our code less, we type *much* less
-(especially if you use autocompletion).
+One ambitious but interesting goal is to be able to "compile"
+the source code to a binary representation. This binary
+representation should be a compact representation of
+lists, with all strings and symbols internalized.
 
-One caveat: this design forbids using
-line-breaks inside `[]`, this is intentional
-since allowing it would create a mess,
-the syntax would be too flexible.
+This may reduce the size of the source code by
+quite a bit, and will be undoubtedly smaller than
+a native binary.
 
-## Concerns <a name="concerns"></a>
-
-### About the syntax
-
-We should allow usage of `()` and `{}` to behave
-as delimiters, just like `[]`. These will serve
-as visual aid.
-
-We can allow `:` and `.` interchangeably for pairs.
-Such that `a.b` and `a:b` both equal to `[a b]`.
-But `a.b.c` should only be equal to `[a b c]`.
-
-This may open up space to write things such as:
-
-```
-proc max [{a b}:(big.num)] big.num
-     if [>= a b] a b
-```
-
-Furthermore, we may allow linebreaks inside delimiters,
-just like Python does, and we may allow continuation
-of a list in a single line using `\`.
-
-```
-array 0 1 2 3 4 \
-      5 6 7 8 9
-
-if
-  or very-very-very-very-big-condition.x \
-     very-very-very-very-big-condition.y \
-     very-very-very-very-big-condition.z
-  something-if-true
-  something-if-false
-
-# just normal lisp :)
-(if (or very-very-very-very-big-condition.x
-        very-very-very-very-big-condition.y
-        very-very-very-very-big-condition.z)
-    something-if-true
-    something-if-false)
-```
-
-This may be overkill, but i think it is flexible enough
-to allow a C-like language.
-
-### About the performance
-
-Optimization is difficult with the presence of first class macros,
-but not impossible. Code representation can be compacted
-as nested arrays to provide better cache locality.
-Procedures can be especialized when no macro arguments
-are used. Profiling is necessary to make any decisions.
-If in the end there's no way to get good performance
-out of a simple language, add intrinsic superinstructions.
+Allowing embedding of binary data within this format is
+also an interesting concept: it can create self
+describing data formats, and contain entire appplications
+and instalation scripts in a single file.
