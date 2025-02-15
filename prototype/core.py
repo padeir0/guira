@@ -1,4 +1,5 @@
 import lexkind
+from fractions import Fraction
 
 class Result:
     def __init__(self, value, error):
@@ -204,9 +205,8 @@ class Symbol:
 #     Integer -> Rational -> Decimal
 # Types are coerced accordingly
 class Number:
-    def __init__(self, number, kind):
+    def __init__(self, number):
         self.number = number
-        self.kind = kind # int, rat, dec
         self.range = None
     def __str__(self):
         return str(self.number)
@@ -214,6 +214,30 @@ class Number:
         return self.range.start.column
     def compute_ranges(self):
         return self.range
+    def add(self, other):
+        a, b = _retype(self, other)
+        self.number = a + b
+        return self
+    def sub(self, other):
+        a, b = _retype(self, other)
+        self.number = a - b
+        return self
+    def mult(self, other):
+        a, b = _retype(self, other)
+        self.number = a * b
+        return self
+    def div(self, other):
+        a, b = _retype(self, other)
+        self.number = a / b
+        return self
+
+def _retype(self, other):
+    if type(self.number) is float or type(other.number) is float:
+        return float(self.number), float(other.number)
+    if type(self.number) is Fraction or type(other.number) is Fraction:
+        return Fraction(self.number), Fraction(other.number)
+    # they are ints.
+    return self.number, other.number
 
 class String:
     def __init__(self, string):
@@ -254,4 +278,4 @@ class ListBuilder:
         return self.root
 
 false = nil
-true = Number(1, 0)
+true = Number(1)

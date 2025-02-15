@@ -1,27 +1,37 @@
-+ 1 2
-+ 3 5
-+ 8 13
-+ 21 34
+if [!= [+ 1 2] 3]
+  print "fail"
+  if [!= [+ 3 5] 8]
+    print "fail"
+    if [!= [+ 8 13] 21]
+      print "fail"
+      print "addition: ok"
 
-- 34 21
-- 21 13
-- 13 8
-- 8 5
-- 5 3
-- 3 2
-- 2 1
+if [!= [- 34 21] 13]
+  print "fail"
+  if [!= [- 13 21] ~8]
+    print "fail"
+    if [!= [- 13 13] 0]
+      print "fail"
+      print "subtraction: ok"
 
-* 2
-* 2 2
-* 2 2 2
-* 2 2 2 2
-* 3
-* 3 3
-* 3 3 3
-* 3 5 7
+if [!= [* 2] 2]
+  print "fail"
+  if [!= [* 2 2] 4]
+    print "fail"
+    if [!= [* 2 ~1] ~2]
+      print "fail"
+      if [!= [* 2 0] 0]
+        print "fail"
+        print "multiplication: ok"
 
-/ 2
-/ 1 2
-/ 1 2 2
-/ 1 2 2 2
-/ 1 3 3 3
+if [!= [/ 2] 1/2]
+  print "fail" 1/2 [/ 2]
+  if [!= [/ 1 2] 1/2]
+    print "fail"
+    if [!= [/ 1 2 2] 1/4]
+      print "fail"
+      if [!= [/ 1 ~2] ~1/2]
+        print "fail"
+        if [!= [/ 0 2] 0]
+          print "fail"
+          print "division: ok"

@@ -8,16 +8,15 @@ def sum_wrapper(ctx, list):
         err = ctx.error("invalid number of arguments", None)
         return Result(None, err)
 
-    out = Fraction(0, 1)
+    out = Number(0)
     curr = list
     while curr != nil:
         if type(curr.head) != Number:
             err = ctx.error("expected number", curr.head.range)
             return Result(None, err)
-        out += curr.head.number
+        out.add(curr.head)
         curr = curr.tail
-    n = Number(out, 0)
-    return Result(n, None)
+    return Result(out, None)
 
 def minus_wrapper(ctx, list):
     if list == nil:
@@ -28,33 +27,31 @@ def minus_wrapper(ctx, list):
     if type(curr.head) != Number:
         err = ctx.error("expected number", curr.head.range)
         return Result(None, err)
-    out = curr.head.number
+    out = curr.head
     curr = curr.tail
 
     while curr != nil:
         if type(curr.head) != Number:
             err = ctx.error("expected number", curr.head.range)
             return Result(None, err)
-        out -= curr.head.number
+        out.sub(curr.head)
         curr = curr.tail
-    n = Number(out, 0)
-    return Result(n, None)
+    return Result(out, None)
 
 def mult_wrapper(ctx, list):
     if list == nil:
         err = ctx.error("invalid number of arguments", None)
         return Result(None, err)
 
-    out = Fraction(1, 1)
+    out = Number(1)
     curr = list
     while curr != nil:
         if type(curr.head) != Number:
             err = ctx.error("expected number", curr.head.range)
             return Result(None, err)
-        out *= curr.head.number
+        out.mult(curr.head)
         curr = curr.tail
-    n = Number(out, 0)
-    return Result(n, None)
+    return Result(out, None)
 
 def div_wrapper(ctx, list):
     if list == nil:
@@ -65,22 +62,22 @@ def div_wrapper(ctx, list):
     if type(curr.head) != Number:
         err = ctx.error("expected number", curr.head.range)
         return Result(None, err)
-    out = curr.head.number
+    out = curr.head
     curr = curr.tail
+    if type(out.number) is int:
+        out.number = Fraction(out.number)
 
     if curr == nil:
-        out = 1/out
-        n = Number(out, 0)
-        return Result(n, None)
+        out = Number(1).div(out)
+        return Result(out, None)
 
     while curr != nil:
         if type(curr.head) != Number:
             err = ctx.error("expected number", curr.head.range)
             return Result(None, err)
-        out /= curr.head.number
+        out.div(curr.head)
         curr = curr.tail
-    n = Number(out, 0)
-    return Result(n, None)
+    return Result(out, None)
 
 def and_wrapper(ctx, list):
     if list == nil:

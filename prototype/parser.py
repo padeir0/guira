@@ -352,7 +352,7 @@ def _atom(parser):
         s.range = word.range
         return Result(s, None)
     elif word.kind == lexkind.NUM:
-        s = Number(Fraction(word.text), 0)
+        s = convert_num(word.text)
         s.range = word.range
         return Result(s, None)
     elif word.kind == lexkind.STR:
@@ -386,3 +386,11 @@ def _pylist_to_list(pylist):
             last.tail = List(item, nil)
             last = last.tail
     return root
+
+def convert_num(lit):
+    lit = lit.replace("~", "-")
+    if "." in lit:
+        return Number(float(lit))
+    if "/" in lit:
+        return Number(Fraction(lit))
+    return Number(int(lit))

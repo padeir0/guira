@@ -10,6 +10,7 @@ uses FEXPRs instead of macros.
 <summary>Contents</summary>
 
 - [The List](#list)
+- [Forms](#forms)
 - [Syntax](#syntax)
 - [Future](#future)
 
@@ -76,6 +77,20 @@ as:
 [[a b] [c d]] [[e f] [g h]]
 [a b]:[c d] [e f]:[g h]
 ```
+
+## Forms <a name="forms"></a>
+
+Guira implements metaprogramming at runtime
+through the use of FEXPR, which here are called _forms_.
+
+There are two kinds of forms: intrinsic forms and user defined forms.
+They are different in the sense that intrinsic forms have control of the
+environment and cannot be defined by the user. In contrast, user defined
+forms have their own environment, and must return an object to be evaluated
+in the caller environment.
+
+This allows all special forms of other lisps (`if`, `quote`, `lambda`, etc)
+to be implemented as forms, which also mean they are first class.
 
 ## Syntax <a name="syntax"></a>
 

@@ -56,7 +56,6 @@ class Function:
 
 # Forms are first class. There are intrinsic forms:
 #     if  let  function  begin  quote  unquote  form
-
 class Intrinsic_Form:
     def __init__(self, name, wrapper):
         self.name = name
@@ -259,7 +258,12 @@ def eval(ctx, expr):
             return res
         head = res.value
 
-        if type(head) in [Form, Intrinsic_Form]:
+        if type(head) is Form:
+            res = head.call(ctx, expr.tail)
+            if res.failed():
+                return res
+            return eval(ctx, res.value)
+        if type(head) is Intrinsic_Form:
             return head.call(ctx, expr.tail)
         elif type(head) in [Function, Intrinsic_Function]:
             res = eval_each(ctx, expr.tail)
