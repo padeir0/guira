@@ -12,3 +12,23 @@ if
   print "fail"
   print "ok"
 
+if 
+  != [cons 1 [cons 2 3]]
+     quote 
+           1 2 . 3
+  print "fail"
+  print "ok"
+
+let a
+    quote
+          1 2 3 4 \
+          5 6 . 7
+let b
+  quote [1 2 3 4
+         5 6 . 7]
+let c [quote [1 2 3 4 5 6 . 7]]
+let d [quote [1:2:3:4:5:6 . 7]]
+
+if [!= a b c d]
+   print "fail"
+   print "ok"

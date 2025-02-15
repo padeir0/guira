@@ -130,8 +130,7 @@ def _block(parser):
     list = _pylist_to_list(leaves)
     return Result(list, None)
 
-# TODO: implement list ending with ". Pair" of I_Expr too
-# I_Expr = Pairs {Line_Continue} [NL >Block].
+# I_Expr = Pairs {Line_Continue} [End | NL >Block].
 def _i_expr(parser):
     parser.track("_i_expr")
 
@@ -155,6 +154,13 @@ def _i_expr(parser):
         if res.failed():
             return res
         cont = res.value
+
+    res = _end(parser)
+    if res.failed():
+        return res
+    if res.value != None:
+        list.append(res.value)
+        return Result(list, None)
 
     if parser.word_is(lexkind.NL):
         res = _NL(parser)
@@ -215,7 +221,7 @@ def _pair(parser):
         return res
     first = res.value
 
-    res = parser.repeat(_dot_term)
+    res = parser.repeat(_colon_term)
     if res.failed():
         return res
     if res.value != None:
@@ -225,8 +231,8 @@ def _pair(parser):
     return Result(first, None)
 
 # ':' Term
-def _dot_term(parser):
-    parser.track("_dot_term")
+def _colon_term(parser):
+    parser.track("_colon_term")
     if parser.word_is(lexkind.COLON):
         res = parser.consume()
         if res.failed():
@@ -245,7 +251,7 @@ def _term(parser):
     else:
         return _atom(parser)
 
-# S_Expr = '[' Pairs ['.' Pair] ']'.
+# S_Expr = '[' ML_Pairs ']'.
 def _s_expr(parser):
     parser.track("_s_expr")
     res = parser.expect(lexkind.LEFT_DELIM, "[")
@@ -253,18 +259,10 @@ def _s_expr(parser):
         return res
     left_delim = res.value
 
-    res = _pairs(parser)
+    res = _ml_pairs(parser)
     if res.failed():
         return res
     list = res.value
-    if parser.word_is(lexkind.DOT):
-        res = parser.consume()
-        if res.failed():
-            return res
-        res = parser.expect_prod(_pair, "expression")
-        if res.failed():
-            return res
-        list.append(res.value)
 
     res = parser.expect(lexkind.RIGHT_DELIM, "]")
     if res.failed():
@@ -274,6 +272,65 @@ def _s_expr(parser):
     list.range = Range(left_delim.range.start,
                        right_delim.range.end)
     return Result(list, None)
+
+# ML_Pairs = [NL] Pair {ML_Pair} [NL] [End [NL]].
+def _ml_pairs(parser):
+    parser.track("ml_pairs")
+    _discard_nl(parser)
+
+    res = parser.expect_prod(_pair, "expression")
+    if res.failed():
+        return res
+    first = res.value
+    if type(first) != List:
+        first = List(first, nil)
+
+    res = parser.repeat(_ml_pair)
+    if res.failed():
+        return res
+    pylist = res.value
+    _discard_nl(parser)
+
+    if pylist != None:
+        list = _pylist_to_list(res.value)
+        first.append(list)
+
+    res = _end(parser)
+    if res.failed():
+        return res
+    if res.value != None:
+        first.append(res.value)
+        _discard_nl(parser)
+    if type(first) is List and first.tail == nil:
+        first = first.head
+    return Result(first, None)
+
+# ML_Pair = [NL] Pair.
+def _ml_pair(parser):
+    parser.track("ml_pair")
+    _discard_nl(parser)
+    res = _term(parser)
+    if res.failed() or res.value == None:
+        return res
+    first = res.value
+
+    res = parser.repeat(_colon_term)
+    if res.failed():
+        return res
+    if res.value != None:
+        leaves = [first] + res.value
+        list = _pylist_to_list(leaves)
+        return Result(list, None)
+    return Result(first, None)
+
+# End = '.' Pair.
+def _end(parser):
+    if parser.word_is(lexkind.DOT):
+        res = parser.consume()
+        if res.failed():
+            return res
+        return parser.expect_prod(_pair, "expression")
+    return Result(None, None)
 
 # Atom = id | num | str.
 def _atom(parser):

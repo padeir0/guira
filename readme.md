@@ -106,13 +106,15 @@ Comment = '#' {not_newline_char} '\n'.
 Program = Block.
 Block = {:I_Expr NL}.
 
-I_Expr = Pairs (End | {Line_Continue} [End | NL >Block]).
+I_Expr = Pairs {Line_Continue} [End | NL >Block].
 Line_Continue = '\\' NL Pairs.
 Pairs = Pair {Pair}.
 End = '.' Pair.
 Pair = Term {':' Term}.
 Term = Atom | S_Expr.
-S_Expr = '[' Pairs [End] ']'.
+S_Expr = '[' ML_Pairs ']'.
+ML_Pairs = [NL] Pair {ML_Pair} [NL] [End [NL]].
+ML_Pair = [NL] Pair.
 
 NL = '\n' {'\n'}.
 Atom = id | num | str.
