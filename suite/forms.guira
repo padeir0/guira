@@ -8,7 +8,6 @@ let macro
                  exprs
 
 macro fun[name args . exprs]
-  # print "fun" name args exprs
   quote
     let [unquote name]
       function [unquote args]
@@ -16,14 +15,28 @@ macro fun[name args . exprs]
           cons [quote begin]
                exprs
 
+macro list[first . exprs]
+  quote
+    cons [unquote first]
+         quote [unquote exprs]
+
 fun square x
   * x x
 
 fun fact[n]
-  print n
   if [<= n 1]
      1
-     * n [fact [- n 1]]
+     [* n [fact [- n 1]]]
 
-print [square 2]
-print [fact 6]
+fun sum[args]
+  if [= args nil]
+     0
+     + [head args] [sum [tail args]]
+
+if [!= [square 2] 4]
+   print "fail"
+   if [!= [fact 6] 720]
+      print "fail"
+      if [!= [sum [list 1 2 3 4 5 6]] 21]
+         print "fail"
+         print "ok"

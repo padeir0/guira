@@ -29,3 +29,8 @@ if [> 4 3 2 1]
 if [>= 4 3 3 3]
   print 'sequence is monotone'
   print 'something is wrong'
+
+if 
+  = [tail [cons 1 nil]] nil
+  print "nil is equals nil"
+  print "fail"

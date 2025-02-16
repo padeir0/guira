@@ -6,7 +6,6 @@ import scopekind
 #    Function, Intrinsic_Function,
 #    Number, String, List,
 #    Nil.
-
 class Intrinsic_Function:
     def __init__(self, name, wrapper):
         self.name = name
@@ -28,7 +27,6 @@ class Function:
 
         s = Scope(self.parent_scope, scopekind.Function)
         ctx.push_env(s)
-        ctx.reset_return()
 
         curr_arg = args
         curr_formal_arg = self.formal_args

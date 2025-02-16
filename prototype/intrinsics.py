@@ -27,7 +27,7 @@ def minus_wrapper(ctx, list):
     if type(curr.head) != Number:
         err = ctx.error("expected number", curr.head.range)
         return Result(None, err)
-    out = curr.head
+    out = Number(0).add(curr.head) # make a copy
     curr = curr.tail
 
     while curr != nil:
@@ -62,7 +62,7 @@ def div_wrapper(ctx, list):
     if type(curr.head) != Number:
         err = ctx.error("expected number", curr.head.range)
         return Result(None, err)
-    out = curr.head
+    out = Number(0).add(curr.head) # make a copy
     curr = curr.tail
     if type(out.number) is int:
         out.number = Fraction(out.number)
@@ -161,7 +161,8 @@ def eq_list(a, b):
 def equals(a, b):
     if not(type(a) is type(b)):
         return False
-
+    if a == nil and b == nil:
+        return True
     if type(a) is List:
         return eq_list(a, b)
     if type(a) is Number:
@@ -288,6 +289,7 @@ def head_wrapper(ctx, list):
         return Result(None, err)
 
     if not (type(list.head) is List):
+        print(list.head)
         err = ctx.error("argument is not a list", None)
         return Result(None, err)
     out = list.head.head
@@ -409,7 +411,6 @@ def form_wrapper(ctx, list):
 def _eval_unquoted(ctx, list):
     if (type(list.head) is Symbol and
         list.head.symbol == "unquote"):
-        # TODO: maybe what we need is quasiquote-splicing?
         res = eval(ctx, list.tail)
         if res.failed():
             return res
@@ -438,7 +439,7 @@ def _eval_unquoted(ctx, list):
 
 # quasiquote expr
 def quote_wrapper(ctx, list):
-    if list == nil:
+    if list == nil or type(list) is List and list.tail != nil:
         err = ctx.error("invalid number of arguments", None)
         return Result(None, err)
     head = list
@@ -527,6 +528,7 @@ def build_scope():
     add_form(scope, "begin",   begin_wrapper)
     add_form(scope, "quote",   quote_wrapper)
     add_form(scope, "unquote", unquote_wrapper)
+    # TODO: fix the semantics around object copies/references
     # TODO: add "set" intrinsic form to allow mutation
     # TODO: add "while" intrinsic form to allow loops without recursion
     # TODO: add "map" intrinsic function
