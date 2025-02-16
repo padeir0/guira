@@ -1,0 +1,20 @@
+let square [function x [* x x]]
+let double [function x [* x 2]]
+
+if [!= [square [square [square 2]]] 256]
+   print "fail"
+   if [!= [double [double 2]]]
+      print "fail"
+      print "basic funcs: ok"
+
+let fact
+   function n
+      if [<= n 1]
+         1
+         * n [fact [- n 1]]
+
+if [!= [fact 3] 6]
+   print "recursive funcs: fail"
+   if [!= [fact 4] 24]
+      print "recursive funcs: fail"
+      print "recursive funcs: ok"

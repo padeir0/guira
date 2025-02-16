@@ -1,0 +1,29 @@
+let macro
+  form [name args . exprs]
+    quote
+      let [unquote name]
+        form [unquote args]
+          unquote
+            cons [quote begin]
+                 exprs
+
+macro fun[name args . exprs]
+  # print "fun" name args exprs
+  quote
+    let [unquote name]
+      function [unquote args]
+        unquote
+          cons [quote begin]
+               exprs
+
+fun square x
+  * x x
+
+fun fact[n]
+  print n
+  if [<= n 1]
+     1
+     * n [fact [- n 1]]
+
+print [square 2]
+print [fact 6]

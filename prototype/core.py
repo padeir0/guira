@@ -115,6 +115,7 @@ def _indent(n):
 class Nil:
     def __init__(self):
         pass
+        self.range = None
     def __str__(self):
         return "nil"
 

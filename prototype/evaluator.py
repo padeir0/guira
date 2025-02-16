@@ -17,18 +17,14 @@ class Intrinsic_Function:
         return "#intrinsic-function:" + self.name
 
 class Function:
-    def __init__(self, name, formal_args, var_arg, body, parent_scope):
-        self.name = name
+    def __init__(self, formal_args, body, parent_scope):
         self.body = body
         self.formal_args = formal_args
         self.parent_scope = parent_scope
-        self.var_arg = var_arg
 
     def call(self, ctx, args):
-        if args.length() < self.formal_args.length():
-            return ctx.blank_error("invalid number of arguments")
-        if self.var_arg == None and args.length() > self.formal_args.length():
-            return ctx.blank_error("invalid number of arguments")
+        if type(args) != List:
+            return ctx.blank_error("invalid argument")
 
         s = Scope(self.parent_scope, scopekind.Function)
         ctx.push_env(s)
@@ -37,22 +33,32 @@ class Function:
         curr_arg = args
         curr_formal_arg = self.formal_args
         while curr_arg != nil and curr_formal_arg != nil:
-            name = curr_formal_arg.head
-            obj = curr_arg.head
-            ctx.add_symbol(name, obj)
+            if type(curr_arg) is List and type(curr_formal_arg) is List:
+                name = curr_formal_arg.head.symbol
+                obj = curr_arg.head
+                ctx.add_symbol(name, obj)
+                curr_formal_arg = curr_formal_arg.tail
+                curr_arg = curr_arg.tail
+            else:
+                break
 
-            curr_formal_arg = curr_formal_arg.tail
-            curr_arg = curr_arg.tail
+        # curr_arg finished first
+        if type(curr_formal_arg) is List and type(curr_arg) != List:
+            return ctx.blank_error("not enough arguments")
+        # too many arguments
+        if curr_formal_arg == nil and curr_arg != nil:
+            return ctx.blank_error("too many arguments")
 
-        if curr_arg != nil and self.var_arg != nil:
-            ctx.add_symbol(self.var_arg, curr_arg)
+        # variadic arguments
+        if type(curr_arg) is List and type(curr_formal_arg) is Symbol:
+            ctx.add_symbol(curr_formal_arg.symbol, curr_arg)
 
         res = eval(ctx, self.body)
         ctx.pop_env()
         return res
 
     def __str__(self):
-        return "#function:" + self.name
+        return "#function"
 
 # Forms are first class. There are intrinsic forms:
 #     if  let  function  begin  quote  unquote  form
@@ -66,42 +72,48 @@ class Intrinsic_Form:
         return "#intrinsic-form:" + self.name
 
 class Form:
-    def __init__(self, name, formal_args, var_arg, body, parent_scope):
-        self.name = name
+    def __init__(self, formal_args, body, parent_scope):
         self.body = body
         self.formal_args = formal_args
         self.parent_scope = parent_scope
-        self.var_arg = var_arg
 
     def call(self, ctx, args):
-        if args.length() < self.formal_args.length():
-            return ctx.blank_error("invalid number of arguments")
-        if self.var_arg == None and args.length() > self.formal_args.length():
-            return ctx.blank_error("invalid number of arguments")
+        if type(args) != List:
+            return ctx.blank_error("invalid argument")
 
-        s = Scope(self.parent_scope, scopekind.Form)
+        s = Scope(self.parent_scope, scopekind.Function)
         ctx.push_env(s)
         ctx.reset_return()
 
         curr_arg = args
         curr_formal_arg = self.formal_args
         while curr_arg != nil and curr_formal_arg != nil:
-            name = curr_formal_arg.head
-            obj = curr_arg.head
-            ctx.add_symbol(name, obj)
+            if type(curr_arg) is List and type(curr_formal_arg) is List:
+                name = curr_formal_arg.head.symbol
+                obj = curr_arg.head
+                ctx.add_symbol(name, obj)
+                curr_formal_arg = curr_formal_arg.tail
+                curr_arg = curr_arg.tail
+            else:
+                break
 
-            curr_formal_arg = curr_formal_arg.tail
-            curr_arg = curr_arg.tail
+        # curr_arg finished first
+        if type(curr_formal_arg) is List and type(curr_arg) != List:
+            return ctx.blank_error("not enough arguments")
+        # too many arguments
+        if curr_formal_arg == nil and curr_arg != nil:
+            return ctx.blank_error("too many arguments")
 
-        if curr_arg != nil and self.var_arg != nil:
-            ctx.add_symbol(self.var_arg, curr_arg)
+        # variadic arguments
+        if type(curr_arg) is List and type(curr_formal_arg) is Symbol:
+            ctx.add_symbol(curr_formal_arg.symbol, curr_arg)
 
         res = eval(ctx, self.body)
         ctx.pop_env()
         return res
 
     def __str__(self):
-        return "#form:" + self.name
+        return "#form"
 
 class Scope:
     def __init__(self, parent, kind):
@@ -275,6 +287,7 @@ def eval(ctx, expr):
             if expr.tail == nil:
                 return Result(head, None)
 
+            print("pyeval:", expr)
             msg = "symbol is not callable: "+head.__str__()
             err = ctx.error(msg, head.range)
             return Result(None, err)

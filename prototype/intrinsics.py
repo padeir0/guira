@@ -362,19 +362,58 @@ def if_wrapper(ctx, list):
     else:
         return eval(ctx, true_expr)
 
-# function [a] [* a a]
-# function [a . b] [* a [apply + b]]
-def function_wrapper(ctx, list):
-    pass
+def format_args(args):
+    if type(args) == Symbol:
+        return Result(List(args, nil), None)
+    if type(args) != List:
+        return Result(None, True)
 
-# form [a] [begin [let a_1 [eval a]] [* a_1 a_1]]
+    curr = args
+    while curr != nil:
+        if type(curr) is List:
+            if type(curr.head) != Symbol:
+                return Result(None, True)
+            curr = curr.tail
+        else:
+            if type(curr) != Symbol:
+                return Result(None, True)
+            curr = nil
+    return Result(args, None)
+
+def function_wrapper(ctx, list):
+    if list == nil or list.length() != 2:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+    arguments = list.head
+    body = list.tail.head
+    res = format_args(arguments)
+    if res.failed():
+        err = ctx.error("invalid arguments for function", None)
+        return Result(None, err)
+    f = Function(res.value, body, ctx.curr_scope())
+    return Result(f, None)
+
 def form_wrapper(ctx, list):
-    pass
+    if list == nil or list.length() != 2:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+    arguments = list.head
+    body = list.tail.head
+    res = format_args(arguments)
+    if res.failed():
+        err = ctx.error("invalid arguments for form", None)
+        return Result(None, err)
+    f = Form(res.value, body, ctx.curr_scope())
+    return Result(f, None)
 
 def _eval_unquoted(ctx, list):
     if (type(list.head) is Symbol and
         list.head.symbol == "unquote"):
-        return eval(ctx, list.tail)
+        # TODO: maybe what we need is quasiquote-splicing?
+        res = eval(ctx, list.tail)
+        if res.failed():
+            return res
+        return res
 
     root = List(list.head, nil)
     out = root
@@ -385,8 +424,8 @@ def _eval_unquoted(ctx, list):
                 res = _eval_unquoted(ctx, curr.head)
                 if res.failed():
                     return res
-                res.value
-                out.tail = List(res.value, nil)
+                value = List(res.value, nil)
+                out.append(value)
                 out = out.tail
             else:
                 out.tail = List(curr.head, nil)
@@ -481,11 +520,26 @@ def build_scope():
     scope.add_symbol("true", true)
     scope.add_symbol("false", false)
 
+    add_form(scope, "function", function_wrapper)
+    add_form(scope, "form", form_wrapper)
     add_form(scope, "let",     let_wrapper)
     add_form(scope, "if",      if_wrapper)
     add_form(scope, "begin",   begin_wrapper)
     add_form(scope, "quote",   quote_wrapper)
     add_form(scope, "unquote", unquote_wrapper)
+    # TODO: add "set" intrinsic form to allow mutation
+    # TODO: add "while" intrinsic form to allow loops without recursion
+    # TODO: add "map" intrinsic function
+    # TODO: add "filter" intrinsic function
+    # TODO: add "reduce" intrinsic function
+    # TODO: add "reverse" intrinsic function
+    # TODO: add "concat" intrinsic function for strings
+    # TODO: add "to-string" intrinsic function
+    # TODO: add "to-num" intrinsic function
+    # TODO: add "to-list" intrinsic function
+    # TODO: add "to-exact" intrinsic function
+    # TODO: add "to-inexact" intrinsic function
+    # TODO: add a dictionary data structure
 
     add_form(scope, "or",    or_wrapper)
     add_form(scope, "and",   and_wrapper)
