@@ -2,10 +2,12 @@ let square [function x [* x x]]
 let double [function x [* x 2]]
 
 if [!= [square [square [square 2]]] 256]
-   print "fail"
-   if [!= [double [double 2]]]
-      print "fail"
-      print "basic funcs: ok"
+   abort "fail 1"
+   nil
+
+if [!= [double [double 2]] 8]
+   abort "fail 2"
+   nil
 
 let fact
    function n
@@ -14,7 +16,11 @@ let fact
          * n [fact [- n 1]]
 
 if [!= [fact 3] 6]
-   print "recursive funcs: fail"
-   if [!= [fact 4] 24]
-      print "recursive funcs: fail"
-      print "recursive funcs: ok"
+   abort "fail 3"
+   nil
+
+if [!= [fact 4] 24]
+   abort "fail 4"
+   nil
+
+print "lambdas.guira: OK"

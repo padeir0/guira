@@ -3,5 +3,7 @@ let a
     6 7 8 9
 
 if [!= a 40]
-  debug a 40
-  print "OK"
+  abort "fail 1"
+  nil
+
+print "linecontinue.guira: OK"

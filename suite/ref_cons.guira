@@ -1,0 +1,12 @@
+let a [cons 1 2]
+let b [cons a [cons 3 4]]
+
+if [!= a [quote [1 . 2]]]
+  abort "fail 1"
+  nil
+
+if [!= b [quote [[1 . 2] 3 . 4]]]
+  abort "fail 2"
+  nil
+
+print "ref_cons.guira: OK"

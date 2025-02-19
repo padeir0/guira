@@ -81,7 +81,6 @@ class Form:
 
         s = Scope(self.parent_scope, scopekind.Function)
         ctx.push_env(s)
-        ctx.reset_return()
 
         curr_arg = args
         curr_formal_arg = self.formal_args
@@ -150,7 +149,6 @@ class Scope:
 class Call_Node:
     def __init__(self, parent, scope):
         self.curr_scope = scope
-        self.return_obj = None
         self.parent = parent
 
     def __str__(self):
@@ -160,7 +158,6 @@ class Context:
     def __init__(self, builtin_scope):
         self.builtin_scope = builtin_scope
         self.curr_call_node = Call_Node(None, builtin_scope)
-        self.is_returning = False
         self.verbose = False
 
     def find_module_name(self):
@@ -213,20 +210,6 @@ class Context:
             return self.evaluated_mods[mod_name]
         return None
 
-    def reset_return(self):
-        self.curr_call_node.parent.return_obj = None
-
-    def get_return(self):
-        self.is_returning = False
-        return self.curr_call_node.return_obj
-
-    def set_return(self, obj):
-        if self.curr_call_node.parent == None:
-            return ctx.blank_error("invalid return (outside function?)")
-        self.curr_call_node.parent.return_obj = obj
-        self.is_returning = True
-        return None
-
     def toggle_verbose(self):
         self.verbose = not self.verbose
 
@@ -248,39 +231,47 @@ def eval_each(ctx, list):
                 res = eval(ctx, curr.head)
                 if res.failed():
                     return res
-                builder.append_atom(res.value)
+                builder.append(List(res.value, nil))
                 curr = curr.tail
             else:
                 res = eval(ctx, curr)
                 if res.failed():
                     return res
-                builder.append_atom(res.value)
+                builder.append(List(res.value, nil))
                 curr = nil
         list = builder.list()
         return Result(list, None)
     else:
         return eval(ctx, list)
 
+def improve(res, expr):
+    if res.failed():
+        if res.error.range == None:
+            res.error.range = expr.range
+    return res
+
 def eval(ctx, expr):
     if type(expr) is List:
         res = eval(ctx, expr.head)
         if res.failed():
-            return res
+            return improve(res, expr)
         head = res.value
 
         if type(head) is Form:
             res = head.call(ctx, expr.tail)
             if res.failed():
-                return res
+                return improve(res, expr)
             return eval(ctx, res.value)
         if type(head) is Intrinsic_Form:
-            return head.call(ctx, expr.tail)
+            res = head.call(ctx, expr.tail)
+            return improve(res, expr)
         elif type(head) in [Function, Intrinsic_Function]:
             res = eval_each(ctx, expr.tail)
             if res.failed():
-                return res
+                return improve(res, expr)
             args = res.value
-            return head.call(ctx, args)
+            res = head.call(ctx, args)
+            return improve(res, expr)
         else:
             if expr.tail == nil:
                 return Result(head, None)

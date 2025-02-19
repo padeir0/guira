@@ -2,12 +2,17 @@ let a 1
 let b 2
 
 if [= a 1]
-   print 'ok'
-   print 'fail'
+  nil
+  abort "fail 1"
 
 if [= b 2]
-  print 'ok'
-  print 'fail'
+  nil
+  abort 'fail 2'
 
-let c [cons 1 [cons 2 nil]]
-print c
+let c [cons a [cons b nil]]
+
+if [!= c [cons 1 [cons 2 nil]]]
+  abort "fail 3"
+  nil
+
+print "let.guira: OK"

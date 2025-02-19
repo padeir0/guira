@@ -1,36 +1,38 @@
 if [= 1 2]
-  print 'something is wrong'
-  print '1 != 2, as it should be'
+  abort 'fail [= 1 2]'
+  nil
 
 if [= 1 1]
-  print '1 == 1, as it should be'
-  print '1 != 1, there\'s something wrong'
+  nil
+  abort 'fail [= 1 1]'
 
 if [= [cons 1 2] [cons 1 2]]
-  print [cons 1 2] '=' [cons 1 2]
-  print 'something is wrong!'
+  nil
+  abort 'fail [cons 1 2]'
 
 if [< 1 2 3 4]
-  print 'sequence is increasing'
-  print 'something is wrong'
+  nil
+  abort 'fail [< 1 2 3 4]'
 
 if [< 1 2 1 1]
-  print 'something is wrong'
-  print 'sequence is weird'
+  abort 'fail [< 1 2 1 1]'
+  nil
 
 if [<= 1 2 2 2]
-  print 'sequence is monotone'
-  print 'something is wrong'
+  nil
+  abort 'fail [<= 1 2 2 2]'
 
 if [> 4 3 2 1]
-  print 'sequence is decreasing'
-  print 'something is wrong'
+  nil
+  abort 'fail [> 4 3 2 1]'
 
 if [>= 4 3 3 3]
-  print 'sequence is monotone'
-  print 'something is wrong'
+  nil
+  abort 'fail [>= 4 3 3 3]'
 
 if 
   = [tail [cons 1 nil]] nil
-  print "nil is equals nil"
-  print "fail"
+  nil
+  abort "fail [= nil nil]"
+
+print "equality.guira: OK"

@@ -268,6 +268,7 @@ def greater_eq_wrapper(ctx, list):
     res.value = _not(res.value)
     return res
 
+# TODO: fix reference semantics of 'cons'
 def cons_wrapper(ctx, list):
     if list == nil or list.tail == nil:
         err = ctx.error("invalid number of arguments", None)
@@ -425,11 +426,11 @@ def _eval_unquoted(ctx, list):
                 res = _eval_unquoted(ctx, curr.head)
                 if res.failed():
                     return res
-                value = List(res.value, nil)
+                value = List(res.value, nil) # TODO: copy this object
                 out.append(value)
                 out = out.tail
             else:
-                out.tail = List(curr.head, nil)
+                out.tail = List(curr.head, nil) # TODO: copy this object
                 out = out.tail
             curr = curr.tail
         else:
@@ -506,6 +507,17 @@ def begin_wrapper(ctx, list):
 
     return Result(out, None)
 
+def abort_wrapper(ctx, list):
+    if list == nil:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+    obj = list
+    if type(list) is List:
+        obj = list.head
+    str = obj.__str__()
+    err = ctx.error(str, None)
+    return Result(None, err)
+
 def add_function(scope, name, wrapper):
     _temp = Intrinsic_Function(name, wrapper)
     scope.add_symbol(name, _temp)
@@ -529,19 +541,34 @@ def build_scope():
     add_form(scope, "quote",   quote_wrapper)
     add_form(scope, "unquote", unquote_wrapper)
     # TODO: fix the semantics around object copies/references
-    # TODO: add "set" intrinsic form to allow mutation
-    # TODO: add "while" intrinsic form to allow loops without recursion
-    # TODO: add "map" intrinsic function
-    # TODO: add "filter" intrinsic function
-    # TODO: add "reduce" intrinsic function
-    # TODO: add "reverse" intrinsic function
-    # TODO: add "concat" intrinsic function for strings
-    # TODO: add "to-string" intrinsic function
-    # TODO: add "to-num" intrinsic function
-    # TODO: add "to-list" intrinsic function
-    # TODO: add "to-exact" intrinsic function
-    # TODO: add "to-inexact" intrinsic function
-    # TODO: add a dictionary data structure
+    #      > we will pass everything as references
+    #      > all operations that create new values should create new copies
+    #      > everything is imutable
+
+    # functions:
+    # TODO: apply
+    # TODO: string?
+    # TODO: number?
+    # TODO: list?
+    # TODO: atom?
+    # TODO: function?
+    # TODO: form?
+    # TODO: to-string
+    # TODO: to-num
+    # TODO: to-list
+    # TODO: to-exact
+    # TODO: to-inexact
+    # TODO: map
+    # TODO: filter
+    # TODO: reduce
+    # TODO: for-each
+    # TODO: lookup
+    # TODO: reverse (for lists)
+    # TODO: concat (for strings)
+    # TODO: format (for strings)
+    # TODO: read (open a file and read all the contents as a string)
+    # TODO: write (open a file and use a string to rewrite all the contents)
+    # TODO: exec (to execute programs)
 
     add_form(scope, "or",    or_wrapper)
     add_form(scope, "and",   and_wrapper)
@@ -564,8 +591,9 @@ def build_scope():
     add_function(scope, "head", head_wrapper)
     add_function(scope, "tail", tail_wrapper)
 
-    add_function(scope, "eval", eval)
+    add_function(scope, "eval",  eval)
     add_function(scope, "print", print_wrapper)
     add_function(scope, "debug", debug_wrapper)
+    add_function(scope, "abort", abort_wrapper)
 
     return scope

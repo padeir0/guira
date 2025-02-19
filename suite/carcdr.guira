@@ -1,24 +1,44 @@
-head
-  cons 1 2
+if [!= head:[cons 1 2] 1]
+  abort "fail 1"
+  nil
 
-tail
-  cons 1 2
+if [!= tail:[cons 1 2] 2]
+  abort "fail 2"
+  nil
 
-head
-  tail [cons 1 [cons 2 nil]]
+if [!= [head [tail [cons 1 [cons 2 nil]]]] 2]
+  abort "fail 3"
+  nil
 
-head
-  head
-    cons [cons 1 [cons 2 nil]]
-         [cons 3 [cons 4 nil]]
+if
+  !=
+    head
+      head
+        cons [cons 1 [cons 2 nil]]
+             [cons 3 [cons 4 nil]]
+    1
+  abort "fail 4"
+  nil
 
-head
-  tail
-    cons [cons 1 [cons 2 nil]]
-         [cons 3 [cons 4 nil]]
+if
+  !=
+    head
+      tail
+        cons [cons 1 [cons 2 nil]]
+             [cons 3 [cons 4 nil]]
+    3
+  abort "fail 5"
+  nil
 
-head
-  tail
-    tail
-      cons [cons 1 [cons 2 nil]]
-           [cons 3 [cons 4 nil]]
+if
+  !=
+    head
+      tail
+        tail
+          cons [cons 1 [cons 2 nil]]
+               [cons 3 [cons 4 nil]]
+    4
+  abort "fail 6"
+  nil
+
+print "carcdr.guira: OK"

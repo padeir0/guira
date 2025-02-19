@@ -1,6 +1,6 @@
 import lexkind
 from lexer import Lexer
-from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil
+from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, ListBuilder
 from fractions import Fraction
 
 def parse(modname, string, track):
@@ -56,6 +56,7 @@ class _Parser:
     # implements:
     #     {Production}
     def repeat(self, production):
+        # TODO: use ListBuilder instead of python lists
         list = []
         res = production(self)
         if res.failed() or res.value == None:
@@ -107,7 +108,7 @@ class _Parser:
 # Block = {:I_Expr NL}.
 def _block(parser):
     parser.track("_block")
-    leaves = []
+    builder = ListBuilder()
 
     base_indent = parser.curr_indent()
     while parser.same_indent(base_indent):
@@ -122,63 +123,65 @@ def _block(parser):
                 return res
 
         if exp != None:
-            leaves += [exp]
+            builder.append(List(exp, nil))
 
-    if leaves == None or len(leaves) == 0:
-        return Result(None, None)
-
-    list = _pylist_to_list(leaves)
+    list = builder.list()
     return Result(list, None)
 
-# I_Expr = Pairs {Line_Continue} [End | NL >Block].
-def _i_expr(parser):
-    parser.track("_i_expr")
-
-    res = _pairs(parser)
-    if res.failed():
-        return res
-    list = res.value
-
-    if type(list) != List:
-        list = List(list, nil)
-
-    end = list.last()
+def __continue(parser):
+    builder = ListBuilder()
     res = _line_continue(parser)
     if res.failed():
         return res
     cont = res.value
     while cont != None:
-        end.append(cont)
-        end = cont.last()
+        builder.append(cont)
         res = _line_continue(parser)
         if res.failed():
             return res
         cont = res.value
+    list = builder.list()
+    return Result(list, None)
+
+# I_Expr = Pairs {Line_Continue} [End | NL >Block].
+def _i_expr(parser):
+    parser.track("_i_expr")
+    builder = ListBuilder()
+
+    res = _pairs(parser)
+    if res.failed():
+        return res
+    builder.append(res.value)
+
+    res = __continue(parser)
+    if res.failed():
+        return res
+    if res.value != None:
+        builder.append(res.value)
 
     res = _end(parser)
     if res.failed():
         return res
     if res.value != None:
-        list.append(res.value)
-        return Result(list, None)
+        builder.append(res.value)
+        return Result(builder.list(), None)
 
     if parser.word_is(lexkind.NL):
         res = _NL(parser)
         if res.failed():
             return res
 
-        list.compute_ranges()
-        start_column = list.start_column()
+        value = builder.list()
+        value.compute_ranges()
+        start_column = value.start_column()
         res = parser.indent_prod(start_column, _block)
         if res.failed():
             return res
         block = res.value
         if block != None:
-            list.append(block)
+            builder.append(block)
 
-    if list != nil and list.tail == nil:
-        return Result(list.head, None)
-
+    list = builder.list()
     return Result(list, None)
 
 # Line_Continue = '\\' NL Pairs.
@@ -208,9 +211,7 @@ def _pairs(parser):
         return Result(first, None)
     list = _pylist_to_list(res.value)
 
-    if type(first) != List:
-        first = List(first, nil)
-    first.append(list)
+    first = List(first, list)
     return Result(first, None)
 
 # Pair = Term {':' Term}.
@@ -281,9 +282,7 @@ def _ml_pairs(parser):
     res = parser.expect_prod(_pair, "expression")
     if res.failed():
         return res
-    first = res.value
-    if type(first) != List:
-        first = List(first, nil)
+    first = List(res.value, nil)
 
     res = parser.repeat(_ml_pair)
     if res.failed():
@@ -301,8 +300,8 @@ def _ml_pairs(parser):
     if res.value != None:
         first.append(res.value)
         _discard_nl(parser)
-    if type(first) is List and first.tail == nil:
-        first = first.head
+    #if type(first) is List and first.tail == nil:
+    #    first = first.head
     return Result(first, None)
 
 # ML_Pair = [NL] Pair.

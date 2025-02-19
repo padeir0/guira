@@ -1,23 +1,15 @@
-print
-  quote [1 2 3 4]
-  quote [1 2 [unquote [* 2 2]]]
-  quote
-    1 0 0 \
-    0 1 0 \
-    0 0 1
-
 if 
   != [cons 1 [cons 2 3]]
      [quote [1 2 . 3]]
-  print "fail"
-  print "ok"
+  abort "fail 1"
+  nil
 
 if 
   != [cons 1 [cons 2 3]]
      quote 
            1 2 . 3
-  print "fail"
-  print "ok"
+  abort "fail 2"
+  nil
 
 let a
     quote
@@ -27,8 +19,30 @@ let b
   quote [1 2 3 4
          5 6 . 7]
 let c [quote [1 2 3 4 5 6 . 7]]
-let d [quote [1:2:3:4:5:6 . 7]]
 
-if [!= a b c d]
-   print "fail"
-   print "ok"
+if [!= a b c]
+  begin
+    print a b c
+    abort "fail 3"
+  nil
+
+if 
+  != [quote [[1] 2]] [cons [cons 1 nil] [cons 2 nil]]
+  abort "fail 4" 
+  nil
+
+if 
+  != 
+    quote 
+      [1] 2
+    [cons [cons 1 nil] [cons 2 nil]]
+  begin
+    print 
+      quote 
+        [1] 2
+      "!="
+      [cons [cons 1 nil] [cons 2 nil]]
+    abort "fail 5" 
+  nil
+
+print "quasiquote.guira: OK"

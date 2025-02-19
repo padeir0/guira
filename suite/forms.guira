@@ -34,9 +34,13 @@ fun sum[args]
      + [head args] [sum [tail args]]
 
 if [!= [square 2] 4]
-   print "fail"
-   if [!= [fact 6] 720]
-      print "fail"
-      if [!= [sum [list 1 2 3 4 5 6]] 21]
-         print "fail"
-         print "ok"
+  abort "fail 1"
+  nil
+if [!= [fact 6] 720]
+  abort "fail 2"
+  nil
+if [!= [sum [list 1 2 3 4 5 6]] 21]
+  abort "fail 3"
+  nil
+
+print "forms.guira: OK"

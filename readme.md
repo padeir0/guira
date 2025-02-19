@@ -21,7 +21,7 @@ uses FEXPRs instead of macros.
 This language simply defines the structure of a list,
 here, we will use S-Expressions to show how this list is parsed.
 
-Consider the S-Expression `(f (a b) c d)`,
+Consider the S-Expression `[f [a b] c d]`,
 the following Guira expressions are equivalent:
 
 ```
@@ -49,8 +49,6 @@ f
 f [a b] \
   c d
 
-f:[a b]:c:d
-
 f a:b c d
 
 f a:b
@@ -58,7 +56,7 @@ f a:b
   d
 ```
 
-Furthermore, if we consider `((a b) (c d) (e f))`,
+Furthermore, if we consider `[[a b] [c d] [e f]]`,
 in Guira, we have:
 
 ```
@@ -69,7 +67,7 @@ in Guira, we have:
 a:b c:d e:f
 ```
 
-We can also go further and write `(((a b) (c d)) ((e f) (g h)))`
+We can also go further and write `[[[a b] [c d]] [[e f] [g h]]]`
 as:
 
 ```
@@ -77,6 +75,8 @@ as:
 [[a b] [c d]] [[e f] [g h]]
 [a b]:[c d] [e f]:[g h]
 ```
+
+The expression `[head [head list]]` can be rewritten `head:head:list`.
 
 ## Forms <a name="forms"></a>
 

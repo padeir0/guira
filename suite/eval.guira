@@ -1,3 +1,5 @@
 if [eval [cons 1 nil]]
-   print 'ok'
-   print 'fail'
+   nil
+   abort 'fail 1'
+
+print "eval.guira: OK"

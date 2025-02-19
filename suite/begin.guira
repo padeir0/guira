@@ -1,6 +1,9 @@
 if
   begin
-    print 'OK'
+    nil
+    nil
     true
-  print 'OK'
-  print 'FAIL'
+  nil
+  abort 'fail 1'
+
+print "begin.guira: OK"

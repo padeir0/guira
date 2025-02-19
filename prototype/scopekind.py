@@ -1,6 +1,6 @@
 Invalid   = 0
 Function  = 1
-Form     = 2
+Form      = 2
 Module    = 3
 Intrinsic = 4
 

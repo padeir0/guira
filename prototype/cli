@@ -2,8 +2,9 @@
 from parser import parse
 from lexer import lex
 from core import List, Symbol, ListBuilder
-from evaluator import eval_each, eval, Call_Node, Context
+from evaluator import eval_each, eval, Call_Node, Context, Scope
 from intrinsics import build_scope
+import scopekind
 import os
 import sys
 import traceback
@@ -35,11 +36,13 @@ def extract_offense(range, program):
         if lines == range.end.line and columns == range.end.column:
             p_index_end = index
 
-    offense = program[p_line_start:p_index_start]
-    offense += "\033[0;31m"
+    offense = "\033[0;32m"
+    offense += program[p_line_start:p_index_start]
+    offense += "\033[4;31m"
     offense += program[p_index_start:p_index_end]
-    offense += "\033[0m"
+    offense += "\033[0;32m"
     offense += program[p_index_end:p_line_end]
+    offense += "\033[0m"
 
     return offense
 
@@ -68,6 +71,11 @@ def get_root_dir(file_path):
     else:
         return None
 
+def print_error(error, program):
+    print(error)
+    if error.range != None:
+        print("--->", extract_offense(error.range, program))
+
 def eval_file(file_path):
     if not file_path.endswith(".guira"):
         print("not a guira file")
@@ -78,23 +86,25 @@ def eval_file(file_path):
         return
     modname = os.path.basename(file_path)
     modname = modname[:len(modname)-6] # removes ".guira"
-    files = get_guira_files(root)
-
     builtins = build_scope()
-    ctx = Context(builtins)
+    modscope = Scope(builtins, scopekind.Module)
+    modscope.name = modname
+    ctx = Context(modscope)
 
+    # files = get_guira_files(root)
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             file_contents = f.read()
             res = parse(file_path, file_contents, False)
             if res.failed():
-                print(res.error)
+                print_error(res.error, file_contents)
             else:
+                res.value.compute_ranges()
                 res = eval_each(ctx, res.value)
                 if res.failed():
-                    print(res.error)
+                    print_error(res.error, file_contents)
     except Exception:
-        print(f"Could not parse file {file_path}:\n{traceback.format_exc()}")
+        print(f"Could not eval file {file_path}:\n{traceback.format_exc()}")
 
 def parse_file(file_path):
     try:

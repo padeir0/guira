@@ -140,6 +140,8 @@ class List:
         return out
     def start_column(self):
         return self.range.start.column
+
+    # TODO: fix this code to consider the range of the full list :)
     def compute_ranges(self):
         if self.head != nil:
             self.range = self.head.compute_ranges()
@@ -175,7 +177,7 @@ class List:
         curr = self
         if curr == nil:
             return nil
-        while curr.tail != nil:
+        while type(curr) is List and curr.tail != nil:
             curr = curr.tail
         return curr
 
@@ -253,30 +255,32 @@ class String:
 
 class ListBuilder:
     def __init__(self):
-        self.root = nil
-        self.last = nil
+        self.root = None
+        self.last = None
 
     def append(self, list):
-        if self.root == nil:
+        if self.root == None:
             self.root = list
-            self.last = list
+            self.last = _last(list)
             return
 
-        if not (type(list) is List):
-            list = List(list, nil)
+        if type(self.root) != List:
+            self.root = List(self.root, nil)
+            self.last = self.root
+
+        if type(self.last) != List:
+            raise "impossible to append to a improper pair"
 
         self.last.tail = list
-        curr = list
-        while curr != nil:
-            if curr.tail == nil:
-                self.last = curr
-            curr = curr.tail
-
-    def append_atom(self, atom):
-        self.append(List(atom, nil))
+        self.last = _last(list)
 
     def list(self):
         return self.root
+
+def _last(list):
+    if type(list) is List:
+        return list.last()
+    return list
 
 false = nil
 true = Number(1)

@@ -1,37 +1,61 @@
 if [!= [+ 1 2] 3]
-  print "fail"
-  if [!= [+ 3 5] 8]
-    print "fail"
-    if [!= [+ 8 13] 21]
-      print "fail"
-      print "addition: ok"
+  abort "fail 1"
+  nil
+
+if [!= [+ 3 5] 8]
+  abort "fail 2"
+  nil
+
+if [!= [+ 8 13] 21]
+  abort "fail 3"
+  nil
 
 if [!= [- 34 21] 13]
-  print "fail"
-  if [!= [- 13 21] ~8]
-    print "fail"
-    if [!= [- 13 13] 0]
-      print "fail"
-      print "subtraction: ok"
+  abort "fail 4"
+  nil
+
+if [!= [- 13 21] ~8]
+  abort "fail 5"
+  nil
+
+if [!= [- 13 13] 0]
+  abort "fail 6"
+  nil
 
 if [!= [* 2] 2]
-  print "fail"
-  if [!= [* 2 2] 4]
-    print "fail"
-    if [!= [* 2 ~1] ~2]
-      print "fail"
-      if [!= [* 2 0] 0]
-        print "fail"
-        print "multiplication: ok"
+  abort "fail 7"
+  nil
+
+if [!= [* 2 2] 4]
+  abort "fail 8"
+  nil
+
+if [!= [* 2 ~1] ~2]
+  abort "fail 9"
+  nil
+
+if [!= [* 2 0] 0]
+  abort "fail 10"
+  nil
 
 if [!= [/ 2] 1/2]
-  print "fail" 1/2 [/ 2]
-  if [!= [/ 1 2] 1/2]
-    print "fail"
-    if [!= [/ 1 2 2] 1/4]
-      print "fail"
-      if [!= [/ 1 ~2] ~1/2]
-        print "fail"
-        if [!= [/ 0 2] 0]
-          print "fail"
-          print "division: ok"
+  abort "fail 11"
+  nil
+
+if [!= [/ 1 2] 1/2]
+  abort "fail 12"
+  nil
+
+if [!= [/ 1 2 2] 1/4]
+  abort "fail 13"
+  nil
+
+if [!= [/ 1 ~2] ~1/2]
+  abort "fail 14"
+  nil
+
+if [!= [/ 0 2] 0]
+  abort "fail 15"
+  nil
+
+print "arith.guira: OK"
