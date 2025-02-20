@@ -9,4 +9,17 @@ if [!= b [quote [[1 . 2] 3 . 4]]]
   abort "fail 2"
   nil
 
+let c [cons 1 [cons 2 nil]]
+let d
+  quote
+    0 [unquote c] 3
+
+if [!= c [cons 1 [cons 2 nil]]]
+  abort "fail 3"
+  nil
+
+if [!= d [quote [0 [1 2] 3]]]
+  abort "fail 4"
+  nil
+
 print "ref_cons.guira: OK"

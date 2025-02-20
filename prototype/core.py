@@ -118,6 +118,8 @@ class Nil:
         self.range = None
     def __str__(self):
         return "nil"
+    def _strlist(self):
+        return "nil"
 
 nil = Nil()
 
@@ -127,21 +129,22 @@ class List:
         self.tail = tail
         self.range = None
     def __str__(self):
-        out = "["+ self.head.__str__()
+        out = "["+ self.head._strlist()
         curr = self.tail
         while curr != nil:
             if type(curr) is List:
-                out += " " + curr.head.__str__()
+                out += " " + curr.head._strlist()
                 curr = curr.tail
             else:
-                out += " . " + curr.__str__()
+                out += " . " + curr._strlist()
                 curr = nil
         out += "]"
         return out
+    def _strlist(self):
+        return self.__str__()
     def start_column(self):
         return self.range.start.column
 
-    # TODO: fix this code to consider the range of the full list :)
     def compute_ranges(self):
         if self.head != nil:
             self.range = self.head.compute_ranges()
@@ -159,13 +162,13 @@ class List:
             if head != nil:
                 hrange = head.compute_ranges()
 
-                other_start = hrange.start
                 self_start = self.range.start
+                other_start = hrange.start
                 if other_start.less(self_start):
                     self.range.start = other_start.copy()
 
-                self_end = head.range.end
-                other_end = self.range.end
+                self_end = self.range.end
+                other_end = hrange.end
                 if other_end.more(self_end):
                     self.range.end = other_end.copy()
         return self.range
@@ -196,6 +199,8 @@ class Symbol:
         self.range = None
     def __str__(self):
         return "'" + self.symbol
+    def _strlist(self):
+        return self.symbol
     def start_column(self):
         return self.range.start.column
     def compute_ranges(self):
@@ -212,6 +217,8 @@ class Number:
         self.number = number
         self.range = None
     def __str__(self):
+        return str(self.number)
+    def _strlist(self):
         return str(self.number)
     def start_column(self):
         return self.range.start.column
@@ -248,6 +255,8 @@ class String:
         self.range = None
     def __str__(self):
         return self.string
+    def _strlist(self):
+        return "'" + self.string + "'"
     def start_column(self):
         return self.range.start.column
     def compute_ranges(self):

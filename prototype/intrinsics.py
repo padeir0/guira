@@ -268,7 +268,6 @@ def greater_eq_wrapper(ctx, list):
     res.value = _not(res.value)
     return res
 
-# TODO: fix reference semantics of 'cons'
 def cons_wrapper(ctx, list):
     if list == nil or list.tail == nil:
         err = ctx.error("invalid number of arguments", None)
@@ -317,7 +316,7 @@ def tail_wrapper(ctx, list):
 
     return Result(out, None)
 
-def print_wrapper(ctx, list):
+def _strargs(list):
     curr = list
     out = []
     while curr != nil:
@@ -328,22 +327,10 @@ def print_wrapper(ctx, list):
             out += [curr.__str__()]
             curr = nil
 
-    print(" ".join(out))
-    return Result(nil, None)
+    return " ".join(out)
 
-def debug_wrapper(ctx, list):
-    curr = list
-    out = []
-    while curr != nil:
-        if type(curr) is List:
-            fmt = str(type(curr.head))+":(" + curr.head.__str__()+")"
-            out += [fmt]
-            curr = curr.tail
-        else:
-            out += [curr.__str__()]
-            curr = nil
-
-    print(" ".join(out))
+def print_wrapper(ctx, list):
+    print(_strargs(list))
     return Result(nil, None)
 
 def if_wrapper(ctx, list):
@@ -426,11 +413,11 @@ def _eval_unquoted(ctx, list):
                 res = _eval_unquoted(ctx, curr.head)
                 if res.failed():
                     return res
-                value = List(res.value, nil) # TODO: copy this object
+                value = List(res.value, nil)
                 out.append(value)
                 out = out.tail
             else:
-                out.tail = List(curr.head, nil) # TODO: copy this object
+                out.tail = List(curr.head, nil)
                 out = out.tail
             curr = curr.tail
         else:
@@ -508,13 +495,9 @@ def begin_wrapper(ctx, list):
     return Result(out, None)
 
 def abort_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
-    obj = list
-    if type(list) is List:
-        obj = list.head
-    str = obj.__str__()
+    str = _strargs(list)
+    if str == "":
+        str = "program aborted"
     err = ctx.error(str, None)
     return Result(None, err)
 
@@ -540,35 +523,36 @@ def build_scope():
     add_form(scope, "begin",   begin_wrapper)
     add_form(scope, "quote",   quote_wrapper)
     add_form(scope, "unquote", unquote_wrapper)
-    # TODO: fix the semantics around object copies/references
-    #      > we will pass everything as references
-    #      > all operations that create new values should create new copies
-    #      > everything is imutable
 
     # functions:
-    # TODO: apply
-    # TODO: string?
-    # TODO: number?
-    # TODO: list?
-    # TODO: atom?
-    # TODO: function?
-    # TODO: form?
-    # TODO: to-string
-    # TODO: to-num
-    # TODO: to-list
-    # TODO: to-exact
-    # TODO: to-inexact
-    # TODO: map
-    # TODO: filter
-    # TODO: reduce
-    # TODO: for-each
-    # TODO: lookup
-    # TODO: reverse (for lists)
-    # TODO: concat (for strings)
-    # TODO: format (for strings)
-    # TODO: read (open a file and read all the contents as a string)
-    # TODO: write (open a file and use a string to rewrite all the contents)
-    # TODO: exec (to execute programs)
+    # TODO: FEAT: apply
+
+    # TODO: FEAT: string?
+    # TODO: FEAT: number?
+    # TODO: FEAT: list?
+    # TODO: FEAT: atom?
+    # TODO: FEAT: function?
+    # TODO: FEAT: form?
+
+    # TODO: FEAT: to-string
+    # TODO: FEAT: to-num
+    # TODO: FEAT: to-list
+    # TODO: FEAT: to-exact
+    # TODO: FEAT: to-inexact
+
+    # TODO: FEAT: map
+    # TODO: FEAT: filter
+    # TODO: FEAT: reduce
+    # TODO: FEAT: for-each
+
+    # TODO: FEAT: lookup (future optimization: attach a hashmap to a list for faster lookups)
+    # TODO: FEAT: reverse (for lists)
+
+    # TODO: FEAT: concat (for strings)
+    # TODO: FEAT: format (for strings)
+    # TODO: FEAT: read (open a file and read all the contents as a string)
+    # TODO: FEAT: write (open a file and use a string to rewrite all the contents)
+    # TODO: FEAT: exec (to execute programs)
 
     add_form(scope, "or",    or_wrapper)
     add_form(scope, "and",   and_wrapper)
@@ -593,7 +577,6 @@ def build_scope():
 
     add_function(scope, "eval",  eval)
     add_function(scope, "print", print_wrapper)
-    add_function(scope, "debug", debug_wrapper)
     add_function(scope, "abort", abort_wrapper)
 
     return scope

@@ -56,7 +56,7 @@ class _Parser:
     # implements:
     #     {Production}
     def repeat(self, production):
-        # TODO: use ListBuilder instead of python lists
+        # TODO: REFACTOR: use ListBuilder instead of python lists
         list = []
         res = production(self)
         if res.failed() or res.value == None:
