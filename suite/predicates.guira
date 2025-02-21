@@ -1,0 +1,159 @@
+###
+
+if [string? 'a']
+   nil
+   abort "fail 1a"
+if [string? 1]
+   abort "fail 1b"
+   nil
+
+###
+
+if [number? 1]
+   nil
+   abort "fail 2a"
+if [number? 1.0]
+   nil
+   abort "fail 2b"
+if [number? 1/1]
+   nil
+   abort "fail 2c"
+if [number? 'a']
+   abort "fail 2d"
+   nil
+
+###
+
+if [list? [cons 1 2]]
+   nil
+   abort "fail 3a"
+if [list? nil]
+   abort "fail 3b"
+   nil
+
+###
+
+if [nil? nil]
+   nil
+   abort "fail 4a"
+if [nil? [cons 1 2]]
+   abort "fail 4b"
+   nil
+if [nil? 0]
+   abort "fail 4c"
+   nil
+
+###
+
+if [atom? 1]
+   nil
+   abort "fail 5a"
+if [atom? [quote a]]
+   nil
+   abort "fail 5b"
+if [atom? 'abc']
+   nil
+   abort "fail 5c"
+if [atom? atom?]
+   nil
+   abort "fail 5d"
+if [atom? if]
+   nil
+   abort "fail 5e"
+
+###
+
+let user-form
+    form [a] a
+
+if [form? if]
+   nil
+   abort "fail 6a"
+if [form? form?]
+   abort "fail 6b"
+   nil
+if [form? 1]
+   abort "fail 6c"
+   nil
+if [form? user-form]
+   nil
+   abort "fail 6d"
+
+###
+
+if [symbol? [quote a]]
+   nil
+   abort "fail 7a"
+if [symbol? 1]
+   abort "fail 7b"
+   nil
+if [symbol? [cons 1 2]]
+   abort "fail 7c"
+   nil
+
+###
+
+let user-function
+    function [x] x
+
+if [function? function?]
+   nil
+   abort "fail 8a"
+if [function? if]
+   abort "fail 8b"
+   nil
+if [function? 1]
+   abort "fail 8c"
+   nil
+if [function? user-function]
+   nil
+   abort "fail 8d"
+
+### 
+
+if [exact? 1]
+   nil
+   abort "fail 9a"
+if [exact? 1/2]
+   nil
+   abort "fail 9b"
+if [exact? 1.1]
+   abort "fail 9c"
+   nil
+if [exact? [/ 1 2]]
+   nil
+   abort "fail 9d"
+if [exact? 'a']
+   abort "fail 9e"
+   nil
+if [exact? exact?]
+   abort "fail 9f"
+   nil
+
+###
+
+if [inexact? 1]
+   abort "fail 10a"
+   nil
+if [inexact? 1/2]
+   abort "fail 10b"
+   nil
+if [inexact? 1.1]
+   nil
+   abort "fail 10c"
+if [inexact? [+ 1.1 1]]
+   nil
+   abort "fail 10d"
+if [inexact? [/ 1 2]]
+   abort "fail 10e"
+   nil
+if [inexact? 'a']
+   abort "fail 10f"
+   nil
+if [inexact? inexact?]
+   abort "fail 10g"
+   nil
+
+###
+
+print "predicates.guira: OK"

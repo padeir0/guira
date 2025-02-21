@@ -3,6 +3,238 @@ from evaluator import eval, Scope, Intrinsic_Function, Function, Form, Intrinsic
 from fractions import Fraction
 import scopekind
 
+def build_scope():
+    scope = Scope(None, scopekind.Intrinsic)
+
+    scope.add_symbol("nil", nil)
+    scope.add_symbol("true", true)
+    scope.add_symbol("false", false)
+
+    add_form(scope, "function", function_wrapper)
+    add_form(scope, "form", form_wrapper)
+    add_form(scope, "let",     let_wrapper)
+    add_form(scope, "if",      if_wrapper)
+    add_form(scope, "begin",   begin_wrapper)
+    add_form(scope, "quote",   quote_wrapper)
+    add_form(scope, "unquote", unquote_wrapper)
+
+    add_function(scope, "string?", pred_string_wrapper)
+    add_function(scope, "number?", pred_number_wrapper)
+    add_function(scope, "list?", pred_list_wrapper)
+    add_function(scope, "atom?", pred_atom_wrapper)
+    add_function(scope, "symbol?", pred_symbol_wrapper)
+    add_function(scope, "function?", pred_function_wrapper)
+    add_function(scope, "form?", pred_form_wrapper)
+    add_function(scope, "nil?", pred_nil_wrapper)
+    add_function(scope, "exact?", pred_exact_wrapper)
+    add_function(scope, "inexact?", pred_inexact_wrapper)
+
+    # TODO: FEAT: to-string
+    # TODO: FEAT: to-num
+    # TODO: FEAT: to-list
+    # TODO: FEAT: to-exact
+    # TODO: FEAT: to-inexact
+
+    # TODO: FEAT: map
+    # TODO: FEAT: filter
+    # TODO: FEAT: reduce
+    # TODO: FEAT: for-each
+
+    # TODO: FEAT: lookup (future optimization: attach a hashmap to a list for faster lookups)
+    # TODO: FEAT: reverse (for lists)
+
+    # TODO: FEAT: concat (for strings)
+    # TODO: FEAT: format (for strings)
+    # TODO: FEAT: read (open a file and read all the contents as a string)
+    # TODO: FEAT: write (open a file and use a string to rewrite all the contents)
+    # TODO: FEAT: exec (to execute programs)
+
+    add_form(scope, "or",    or_wrapper)
+    add_form(scope, "and",   and_wrapper)
+
+    add_function(scope, "not",  not_wrapper)
+
+    add_function(scope, "=",  eq_wrapper)
+    add_function(scope, "!=", neq_wrapper)
+    add_function(scope, "<",  less_wrapper)
+    add_function(scope, ">",  greater_wrapper)
+    add_function(scope, "<=", less_eq_wrapper)
+    add_function(scope, ">=", greater_eq_wrapper)
+
+    add_function(scope, "+", sum_wrapper)
+    add_function(scope, "-", minus_wrapper)
+    add_function(scope, "*", mult_wrapper)
+    add_function(scope, "/", div_wrapper)
+
+    add_function(scope, "cons", cons_wrapper)
+    add_function(scope, "head", head_wrapper)
+    add_function(scope, "tail", tail_wrapper)
+
+    add_function(scope, "eval",  eval)
+    # TODO: FEAT: apply
+
+    add_function(scope, "print", print_wrapper)
+    add_function(scope, "abort", abort_wrapper)
+
+    return scope
+
+### UTILS
+def add_function(scope, name, wrapper):
+    _temp = Intrinsic_Function(name, wrapper)
+    scope.add_symbol(name, _temp)
+
+def add_form(scope, name, wrapper):
+    _temp = Intrinsic_Form(name, wrapper)
+    scope.add_symbol(name, _temp)
+
+def _strargs(list):
+    curr = list
+    out = []
+    while curr != nil:
+        if type(curr) is List:
+            out += [curr.head.__str__()]
+            curr = curr.tail
+        else:
+            out += [curr.__str__()]
+            curr = nil
+
+    return " ".join(out)
+
+def _not(obj):
+    out = None
+    if type(obj) is List:
+        out = obj.head
+    else:
+        out = obj
+
+    if out == false:
+        out = true
+    else:
+        out = false
+    return out
+
+def eq_list(a, b):
+    curr_a = a
+    curr_b = b
+    while curr_a != nil and curr_b != nil:
+        if type(curr_a) != type(curr_b):
+            return False
+        if type(curr_a) is List:
+            if not equals(curr_a.head, curr_b.head):
+                return False
+            curr_a = curr_a.tail
+            curr_b = curr_b.tail
+        else:
+            if not equals(curr_a, curr_b):
+                return False
+            curr_a = nil
+            curr_b = nil
+    if curr_a != nil or curr_b != nil:
+        return False
+    return True
+
+def equals(a, b):
+    if not(type(a) is type(b)):
+        return False
+    if a == nil and b == nil:
+        return True
+    if type(a) is List:
+        return eq_list(a, b)
+    if type(a) is Number:
+        return a.number == b.number
+    if type(a) is String:
+        return a.string == b.string
+    if type(a) is Symbol:
+        return a.symbol == b.symbol
+    if type(a) in [Intrinsic_Function, Function, Form, Intrinsic_Form]:
+        # we can't expose the implementation
+        return False
+    return False
+
+def format_args(args):
+    if type(args) == Symbol:
+        return Result(List(args, nil), None)
+    if type(args) != List:
+        return Result(None, True)
+
+    curr = args
+    while curr != nil:
+        if type(curr) is List:
+            if type(curr.head) != Symbol:
+                return Result(None, True)
+            curr = curr.tail
+        else:
+            if type(curr) != Symbol:
+                return Result(None, True)
+            curr = nil
+    return Result(args, None)
+
+def check_single_argument(list):
+    if list == nil or type(list) is List and list.tail != nil:
+        err = ctx.error("invalid number of arguments", None)
+        return Result(None, err)
+    return Result(None, None)
+
+def predicate(list, kinds):
+    res = check_single_argument(list)
+    if res.failed():
+        return res
+    arg = list.head
+    if type(arg) in kinds:
+        return Result(true, None)
+    return Result(false, None)
+
+### TYPE PREDICATES
+def pred_string_wrapper(ctx, list):
+    return predicate(list, [String])
+
+def pred_number_wrapper(ctx, list):
+    return predicate(list, [Number])
+
+def pred_list_wrapper(ctx, list):
+    return predicate(list, [List])
+
+def pred_atom_wrapper(ctx, list):
+    res = pred_list_wrapper(ctx, list)
+    if res.failed():
+        return res
+    res.value = _not(res.value)
+    return res
+
+def pred_function_wrapper(ctx, list):
+    return predicate(list, [Function, Intrinsic_Function])
+
+def pred_form_wrapper(ctx, list):
+    return predicate(list, [Form, Intrinsic_Form])
+
+def pred_nil_wrapper(ctx, list):
+    return predicate(list, [Nil])
+
+def pred_symbol_wrapper(ctx, list):
+    return predicate(list, [Symbol])
+
+### SUBTYPE PREDICATES
+
+def pred_exact_wrapper(ctx, list):
+    res = check_single_argument(list)
+    if res.failed():
+        return res
+    arg = list.head
+    if type(arg) is Number and type(arg.number) in [int, Fraction]:
+        return Result(true, None)
+    return Result(false, None)
+
+def pred_inexact_wrapper(ctx, list):
+    res = check_single_argument(list)
+    if res.failed():
+        return res
+    arg = list.head
+    if type(arg) is Number and type(arg.number) is float:
+        return Result(true, None)
+    return Result(false, None)
+
+### ARITHMETIC
+
 def sum_wrapper(ctx, list):
     if list == nil:
         err = ctx.error("invalid number of arguments", None)
@@ -79,6 +311,8 @@ def div_wrapper(ctx, list):
         curr = curr.tail
     return Result(out, None)
 
+### LOGICAL FORMS
+
 def and_wrapper(ctx, list):
     if list == nil:
         err = ctx.error("invalid number of arguments", None)
@@ -117,18 +351,7 @@ def or_wrapper(ctx, list):
             return Result(true, None)
     return Result(false, None)
 
-def _not(obj):
-    out = None
-    if type(obj) is List:
-        out = obj.head
-    else:
-        out = obj
-
-    if out == false:
-        out = true
-    else:
-        out = false
-    return out
+### LOGICAL OPERATOR
 
 def not_wrapper(ctx, list):
     if list == nil or (type(list) is List and list.tail != nil):
@@ -138,42 +361,7 @@ def not_wrapper(ctx, list):
     out = _not(list)
     return Result(out, None)
 
-def eq_list(a, b):
-    curr_a = a
-    curr_b = b
-    while curr_a != nil and curr_b != nil:
-        if type(curr_a) != type(curr_b):
-            return False
-        if type(curr_a) is List:
-            if not equals(curr_a.head, curr_b.head):
-                return False
-            curr_a = curr_a.tail
-            curr_b = curr_b.tail
-        else:
-            if not equals(curr_a, curr_b):
-                return False
-            curr_a = nil
-            curr_b = nil
-    if curr_a != nil or curr_b != nil:
-        return False
-    return True
-
-def equals(a, b):
-    if not(type(a) is type(b)):
-        return False
-    if a == nil and b == nil:
-        return True
-    if type(a) is List:
-        return eq_list(a, b)
-    if type(a) is Number:
-        return a.number == b.number
-    if type(a) is String:
-        return a.string == b.string
-    if type(a) is Symbol:
-        return a.symbol == b.symbol
-    if type(a) in [Intrinsic_Function, Function, Form, Intrinsic_Form]:
-        return a == b
-    return False
+### COMPARISON
 
 def eq_wrapper(ctx, list):
     if list == nil:
@@ -268,6 +456,8 @@ def greater_eq_wrapper(ctx, list):
     res.value = _not(res.value)
     return res
 
+### LIST OPERATORS
+
 def cons_wrapper(ctx, list):
     if list == nil or list.tail == nil:
         err = ctx.error("invalid number of arguments", None)
@@ -316,22 +506,20 @@ def tail_wrapper(ctx, list):
 
     return Result(out, None)
 
-def _strargs(list):
-    curr = list
-    out = []
-    while curr != nil:
-        if type(curr) is List:
-            out += [curr.head.__str__()]
-            curr = curr.tail
-        else:
-            out += [curr.__str__()]
-            curr = nil
-
-    return " ".join(out)
+### SIDE-EFFECTS
 
 def print_wrapper(ctx, list):
     print(_strargs(list))
     return Result(nil, None)
+
+def abort_wrapper(ctx, list):
+    str = _strargs(list)
+    if str == "":
+        str = "program aborted"
+    err = ctx.error(str, None)
+    return Result(None, err)
+
+### INTRINSIC FORMS
 
 def if_wrapper(ctx, list):
     if list == nil or list.length() != 3:
@@ -351,24 +539,6 @@ def if_wrapper(ctx, list):
         return eval(ctx, false_expr)
     else:
         return eval(ctx, true_expr)
-
-def format_args(args):
-    if type(args) == Symbol:
-        return Result(List(args, nil), None)
-    if type(args) != List:
-        return Result(None, True)
-
-    curr = args
-    while curr != nil:
-        if type(curr) is List:
-            if type(curr.head) != Symbol:
-                return Result(None, True)
-            curr = curr.tail
-        else:
-            if type(curr) != Symbol:
-                return Result(None, True)
-            curr = nil
-    return Result(args, None)
 
 def function_wrapper(ctx, list):
     if list == nil or list.length() != 2:
@@ -493,90 +663,3 @@ def begin_wrapper(ctx, list):
             out = res.value
 
     return Result(out, None)
-
-def abort_wrapper(ctx, list):
-    str = _strargs(list)
-    if str == "":
-        str = "program aborted"
-    err = ctx.error(str, None)
-    return Result(None, err)
-
-def add_function(scope, name, wrapper):
-    _temp = Intrinsic_Function(name, wrapper)
-    scope.add_symbol(name, _temp)
-
-def add_form(scope, name, wrapper):
-    _temp = Intrinsic_Form(name, wrapper)
-    scope.add_symbol(name, _temp)
-
-def build_scope():
-    scope = Scope(None, scopekind.Intrinsic)
-
-    scope.add_symbol("nil", nil)
-    scope.add_symbol("true", true)
-    scope.add_symbol("false", false)
-
-    add_form(scope, "function", function_wrapper)
-    add_form(scope, "form", form_wrapper)
-    add_form(scope, "let",     let_wrapper)
-    add_form(scope, "if",      if_wrapper)
-    add_form(scope, "begin",   begin_wrapper)
-    add_form(scope, "quote",   quote_wrapper)
-    add_form(scope, "unquote", unquote_wrapper)
-
-    # functions:
-    # TODO: FEAT: apply
-
-    # TODO: FEAT: string?
-    # TODO: FEAT: number?
-    # TODO: FEAT: list?
-    # TODO: FEAT: atom?
-    # TODO: FEAT: function?
-    # TODO: FEAT: form?
-
-    # TODO: FEAT: to-string
-    # TODO: FEAT: to-num
-    # TODO: FEAT: to-list
-    # TODO: FEAT: to-exact
-    # TODO: FEAT: to-inexact
-
-    # TODO: FEAT: map
-    # TODO: FEAT: filter
-    # TODO: FEAT: reduce
-    # TODO: FEAT: for-each
-
-    # TODO: FEAT: lookup (future optimization: attach a hashmap to a list for faster lookups)
-    # TODO: FEAT: reverse (for lists)
-
-    # TODO: FEAT: concat (for strings)
-    # TODO: FEAT: format (for strings)
-    # TODO: FEAT: read (open a file and read all the contents as a string)
-    # TODO: FEAT: write (open a file and use a string to rewrite all the contents)
-    # TODO: FEAT: exec (to execute programs)
-
-    add_form(scope, "or",    or_wrapper)
-    add_form(scope, "and",   and_wrapper)
-
-    add_function(scope, "not",  not_wrapper)
-
-    add_function(scope, "=",  eq_wrapper)
-    add_function(scope, "!=", neq_wrapper)
-    add_function(scope, "<",  less_wrapper)
-    add_function(scope, ">",  greater_wrapper)
-    add_function(scope, "<=", less_eq_wrapper)
-    add_function(scope, ">=", greater_eq_wrapper)
-
-    add_function(scope, "+", sum_wrapper)
-    add_function(scope, "-", minus_wrapper)
-    add_function(scope, "*", mult_wrapper)
-    add_function(scope, "/", div_wrapper)
-
-    add_function(scope, "cons", cons_wrapper)
-    add_function(scope, "head", head_wrapper)
-    add_function(scope, "tail", tail_wrapper)
-
-    add_function(scope, "eval",  eval)
-    add_function(scope, "print", print_wrapper)
-    add_function(scope, "abort", abort_wrapper)
-
-    return scope
