@@ -2,8 +2,12 @@
 
 The goal of Guira is to be a minimalistic scripting language:
 quick to learn, flexible and not too slow.
-It is an impure Lisp-1 based on I-Expressions that
+It is a pure Lisp-1 based on I-Expressions that
 uses FEXPRs instead of macros.
+
+One cool feature of Guira is that everything is first class,
+even `if` and `let` are not special forms: you can pass
+them as arguments to other functions.
 
 <details>
 

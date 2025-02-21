@@ -231,13 +231,13 @@ def eval_each(ctx, list):
                 res = eval(ctx, curr.head)
                 if res.failed():
                     return res
-                builder.append(List(res.value, nil))
+                builder.append_item(res.value)
                 curr = curr.tail
             else:
                 res = eval(ctx, curr)
                 if res.failed():
                     return res
-                builder.append(List(res.value, nil))
+                builder.append_item(res.value)
                 curr = nil
         list = builder.list()
         return Result(list, None)

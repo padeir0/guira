@@ -4,7 +4,7 @@ from fractions import Fraction
 class Result:
     def __init__(self, value, error):
         if type(value) is Result:
-            raise "nested results"
+            raise Exception("nested results")
         self.value = value
         self.error = error
 
@@ -267,18 +267,39 @@ class ListBuilder:
         self.root = None
         self.last = None
 
-    def append(self, list):
+    def append_end(self, item):
+        if self.root == None:
+            raise Exception("list is None")
+        if type(self.last) != List:
+            raise Exception("impossible to append to a improper pair")
+        self.last.tail = item
+        self.last = self.last.tail
+
+    def append_item(self, item):
+        item = List(item, nil)
+
+        if self.root == None:
+            self.root = item
+            self.last = self.root
+            return
+
+        if type(self.last) != List:
+            raise Exception("impossible to append to a improper pair")
+
+        self.last.tail = item
+        self.last = self.last.tail
+
+    def append_list(self, list):
+        if type(list) != List:
+            raise Exception("expected list")
+
         if self.root == None:
             self.root = list
             self.last = _last(list)
             return
 
-        if type(self.root) != List:
-            self.root = List(self.root, nil)
-            self.last = self.root
-
         if type(self.last) != List:
-            raise "impossible to append to a improper pair"
+            raise Exception("impossible to append to a improper pair")
 
         self.last.tail = list
         self.last = _last(list)

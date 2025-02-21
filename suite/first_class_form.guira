@@ -1,0 +1,6 @@
+[if nil if if]
+  nil
+  abort "fail 1"
+  nil
+
+print "pp.guira: OK"

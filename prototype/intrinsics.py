@@ -1,4 +1,4 @@
-from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, true, false
+from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, true, false, ListBuilder
 from evaluator import eval, Scope, Intrinsic_Function, Function, Form, Intrinsic_Form
 from fractions import Fraction
 import scopekind
@@ -16,7 +16,6 @@ def build_scope():
     add_form(scope, "if",      if_wrapper)
     add_form(scope, "begin",   begin_wrapper)
     add_form(scope, "quote",   quote_wrapper)
-    add_form(scope, "unquote", unquote_wrapper)
 
     add_function(scope, "string?", pred_string_wrapper)
     add_function(scope, "number?", pred_number_wrapper)
@@ -26,28 +25,41 @@ def build_scope():
     add_function(scope, "function?", pred_function_wrapper)
     add_function(scope, "form?", pred_form_wrapper)
     add_function(scope, "nil?", pred_nil_wrapper)
+
     add_function(scope, "exact?", pred_exact_wrapper)
     add_function(scope, "inexact?", pred_inexact_wrapper)
 
-    # TODO: FEAT: to-string
-    # TODO: FEAT: to-num
-    # TODO: FEAT: to-list
-    # TODO: FEAT: to-exact
-    # TODO: FEAT: to-inexact
+    # CONVERSION FUNCTIONS
+    # TODO: FEAT: to-string   any -> string
+    # TODO: FEAT: to-symbol   string -> symbol/nil
+    # TODO: FEAT: to-num      str -> number
+    # TODO: FEAT: to-list     str -> list
+    # TODO: FEAT: to-exact    str/number -> exact/nil
+    # TODO: FEAT: to-inexact  str/number -> inexact/nil
 
-    # TODO: FEAT: map
-    # TODO: FEAT: filter
-    # TODO: FEAT: reduce
-    # TODO: FEAT: for-each
+    # LIST FUNCTIONS
+    # TODO: FEAT: list        any . any -> list
+    # TODO: FEAT: map         list function -> list
+    # TODO: FEAT: filter      list function -> list
+    # TODO: FEAT: reduce      list function any -> any
+    # TODO: FEAT: for-each    list function -> nil
+    # TODO: FEAT: reverse     list -> list
+    # (possible future optimization: attach a hashmap to a list for faster lookups)
+    # TODO: FEAT: exists?     list any -> bool
+    # TODO: FEAT: lookup      list any -> any
 
-    # TODO: FEAT: lookup (future optimization: attach a hashmap to a list for faster lookups)
-    # TODO: FEAT: reverse (for lists)
+    # STRING FUNCTIONS
+    # TODO: FEAT: concat      string . string -> string
+    # TODO: FEAT: format      string . any -> string
+    # TODO: FEAT: slice       string num num -> string
 
-    # TODO: FEAT: concat (for strings)
-    # TODO: FEAT: format (for strings)
-    # TODO: FEAT: read (open a file and read all the contents as a string)
-    # TODO: FEAT: write (open a file and use a string to rewrite all the contents)
-    # TODO: FEAT: exec (to execute programs)
+    # I/O FUNCTIONS
+    # (open a file and read all the contents as a string)
+    # TODO: FEAT: read        string -> string
+    # (open a file and use a string to rewrite all the contents)
+    # TODO: FEAT: write       string string -> string/nil
+    # (to execute some shell code)
+    # TODO: FEAT: exec        string -> string
 
     add_form(scope, "or",    or_wrapper)
     add_form(scope, "and",   and_wrapper)
@@ -71,7 +83,7 @@ def build_scope():
     add_function(scope, "tail", tail_wrapper)
 
     add_function(scope, "eval",  eval)
-    # TODO: FEAT: apply
+    # TODO: FEAT: apply       function/form list -> any
 
     add_function(scope, "print", print_wrapper)
     add_function(scope, "abort", abort_wrapper)
@@ -479,7 +491,6 @@ def head_wrapper(ctx, list):
         return Result(None, err)
 
     if not (type(list.head) is List):
-        print(list.head)
         err = ctx.error("argument is not a list", None)
         return Result(None, err)
     out = list.head.head
@@ -574,26 +585,22 @@ def _eval_unquoted(ctx, list):
             return res
         return res
 
-    root = List(list.head, nil)
-    out = root
-    curr = list.tail
+    builder = ListBuilder()
+    curr = list
     while curr != nil:
         if type(curr) is List:
             if type(curr.head) is List:
                 res = _eval_unquoted(ctx, curr.head)
                 if res.failed():
                     return res
-                value = List(res.value, nil)
-                out.append(value)
-                out = out.tail
+                builder.append_item(res.value)
             else:
-                out.tail = List(curr.head, nil)
-                out = out.tail
+                builder.append_item(curr.head)
             curr = curr.tail
         else:
-            out.tail = curr
+            builder.append_end(curr)
             curr = nil
-    return Result(root, None)
+    return Result(builder.list(), None)
 
 # quasiquote expr
 def quote_wrapper(ctx, list):
@@ -609,13 +616,6 @@ def quote_wrapper(ctx, list):
             return res
         head = res.value
     return Result(head, None)
-
-# here if evalued outside quote
-def unquote_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
-    return eval(ctx, list)
 
 def let_wrapper(ctx, list):
     if list == nil or list.length() != 2:

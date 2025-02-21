@@ -123,7 +123,7 @@ def _block(parser):
                 return res
 
         if exp != None:
-            builder.append(List(exp, nil))
+            builder.append_item(exp)
 
     list = builder.list()
     return Result(list, None)
@@ -135,7 +135,7 @@ def __continue(parser):
         return res
     cont = res.value
     while cont != None:
-        builder.append(cont)
+        builder.append_list(cont)
         res = _line_continue(parser)
         if res.failed():
             return res
@@ -151,19 +151,19 @@ def _i_expr(parser):
     res = _pairs(parser)
     if res.failed():
         return res
-    builder.append(res.value)
+    builder.append_list(res.value)
 
     res = __continue(parser)
     if res.failed():
         return res
     if res.value != None:
-        builder.append(res.value)
+        builder.append_list(res.value)
 
     res = _end(parser)
     if res.failed():
         return res
     if res.value != None:
-        builder.append(res.value)
+        builder.append_end(res.value)
         return Result(builder.list(), None)
 
     if parser.word_is(lexkind.NL):
@@ -179,9 +179,11 @@ def _i_expr(parser):
             return res
         block = res.value
         if block != None:
-            builder.append(block)
+            builder.append_list(block)
 
     list = builder.list()
+    if list.tail == nil:
+        return Result(list.head, None)
     return Result(list, None)
 
 # Line_Continue = '\\' NL Pairs.
@@ -198,22 +200,23 @@ def _line_continue(parser):
 
 # Pairs = Pair {Pair}.
 def _pairs(parser):
+    builder = ListBuilder()
     res = parser.expect_prod(_pair, "expression")
     if res.failed():
         return res
-    first = res.value
+    builder.append_item(res.value)
 
     res = parser.repeat(_pair)
     if res.failed():
         return res
     pylist = res.value
-    if pylist == None or len(pylist) == 0:
-        return Result(first, None)
-    list = _pylist_to_list(res.value)
+    if res.value != None and len(res.value) > 0:
+        list = _pylist_to_list(res.value)
+        builder.append_list(list)
 
-    first = List(first, list)
-    return Result(first, None)
+    return Result(builder.list(), None)
 
+# TODO: BUG: `a:b:c` should be parsed as `[a [b c]]`
 # Pair = Term {':' Term}.
 def _pair(parser):
     parser.track("_pair")
@@ -278,11 +281,12 @@ def _s_expr(parser):
 def _ml_pairs(parser):
     parser.track("ml_pairs")
     _discard_nl(parser)
+    builder = ListBuilder()
 
     res = parser.expect_prod(_pair, "expression")
     if res.failed():
         return res
-    first = List(res.value, nil)
+    builder.append_item(res.value)
 
     res = parser.repeat(_ml_pair)
     if res.failed():
@@ -292,17 +296,15 @@ def _ml_pairs(parser):
 
     if pylist != None:
         list = _pylist_to_list(res.value)
-        first.append(list)
+        builder.append_list(list)
 
     res = _end(parser)
     if res.failed():
         return res
     if res.value != None:
-        first.append(res.value)
+        builder.append_end(res.value)
         _discard_nl(parser)
-    #if type(first) is List and first.tail == nil:
-    #    first = first.head
-    return Result(first, None)
+    return Result(builder.list(), None)
 
 # ML_Pair = [NL] Pair.
 def _ml_pair(parser):
