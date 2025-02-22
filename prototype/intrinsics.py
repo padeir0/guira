@@ -1,41 +1,41 @@
 from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, true, false, ListBuilder
 from evaluator import eval, Scope, Intrinsic_Function, Function, Form, Intrinsic_Form
+from coreutil import is_valid_identifier, is_valid_number, convert_number, string_to_list
 from fractions import Fraction
 import scopekind
 
 def build_scope():
     scope = Scope(None, scopekind.Intrinsic)
 
-    scope.add_symbol("nil", nil)
-    scope.add_symbol("true", true)
+    scope.add_symbol("nil",   nil)
+    scope.add_symbol("true",  true)
     scope.add_symbol("false", false)
 
     add_form(scope, "function", function_wrapper)
-    add_form(scope, "form", form_wrapper)
-    add_form(scope, "let",     let_wrapper)
-    add_form(scope, "if",      if_wrapper)
-    add_form(scope, "begin",   begin_wrapper)
-    add_form(scope, "quote",   quote_wrapper)
+    add_form(scope, "form",     form_wrapper)
+    add_form(scope, "let",      let_wrapper)
+    add_form(scope, "if",       if_wrapper)
+    add_form(scope, "begin",    begin_wrapper)
+    add_form(scope, "quote",    quote_wrapper)
 
-    add_function(scope, "string?", pred_string_wrapper)
-    add_function(scope, "number?", pred_number_wrapper)
-    add_function(scope, "list?", pred_list_wrapper)
-    add_function(scope, "atom?", pred_atom_wrapper)
-    add_function(scope, "symbol?", pred_symbol_wrapper)
+    add_function(scope, "string?",   pred_string_wrapper)
+    add_function(scope, "number?",   pred_number_wrapper)
+    add_function(scope, "list?",     pred_list_wrapper)
+    add_function(scope, "atom?",     pred_atom_wrapper)
+    add_function(scope, "symbol?",   pred_symbol_wrapper)
     add_function(scope, "function?", pred_function_wrapper)
-    add_function(scope, "form?", pred_form_wrapper)
-    add_function(scope, "nil?", pred_nil_wrapper)
+    add_function(scope, "form?",     pred_form_wrapper)
+    add_function(scope, "nil?",      pred_nil_wrapper)
 
-    add_function(scope, "exact?", pred_exact_wrapper)
+    add_function(scope, "exact?",   pred_exact_wrapper)
     add_function(scope, "inexact?", pred_inexact_wrapper)
 
-    # CONVERSION FUNCTIONS
-    # TODO: FEAT: to-string   any -> string
-    # TODO: FEAT: to-symbol   string -> symbol/nil
-    # TODO: FEAT: to-num      str -> number
-    # TODO: FEAT: to-list     str -> list
-    # TODO: FEAT: to-exact    str/number -> exact/nil
-    # TODO: FEAT: to-inexact  str/number -> inexact/nil
+    add_function(scope, "to-string",  to_string_wrapper)
+    add_function(scope, "to-symbol",  to_symbol_wrapper)
+    add_function(scope, "to-number",  to_number_wrapper)
+    add_function(scope, "to-list",    to_list_wrapper)
+    add_function(scope, "to-exact",   to_exact_wrapper)
+    add_function(scope, "to-inexact", to_inexact_wrapper)
 
     # LIST FUNCTIONS
     # TODO: FEAT: list        any . any -> list
@@ -61,8 +61,8 @@ def build_scope():
     # (to execute some shell code)
     # TODO: FEAT: exec        string -> string
 
-    add_form(scope, "or",    or_wrapper)
-    add_form(scope, "and",   and_wrapper)
+    add_form(scope, "or",  or_wrapper)
+    add_form(scope, "and", and_wrapper)
 
     add_function(scope, "not",  not_wrapper)
 
@@ -187,6 +187,16 @@ def check_single_argument(list):
         return Result(None, err)
     return Result(None, None)
 
+def check_single_string(list):
+    res = check_single_argument(list)
+    if res.failed():
+        return res
+    head = list.head
+    if type(head) != String:
+        err = ctx.error("expected string", list.range)
+        return Result(None, err)
+    return Result(None, None)
+
 def predicate(list, kinds):
     res = check_single_argument(list)
     if res.failed():
@@ -244,6 +254,81 @@ def pred_inexact_wrapper(ctx, list):
     if type(arg) is Number and type(arg.number) is float:
         return Result(true, None)
     return Result(false, None)
+
+### CONVERSION FUNCTIONS
+def to_string_wrapper(ctx, list):
+    res = check_single_argument(list)
+    if res.failed():
+        return res
+
+    out = list.head.__str__()
+    return Result(String(out), None)
+
+def to_symbol_wrapper(ctx, list):
+    res = check_single_string(list)
+    if res.failed():
+        return res
+    head = list.head
+    if not is_valid_identifier(head.string):
+        return Result(nil, None)
+    sy = Symbol(head.string)
+    return Result(sy, None)
+
+def to_number_wrapper(ctx, list):
+    res = check_single_string(list)
+    if res.failed():
+        return res
+    head = list.head
+    if not is_valid_number(head.string):
+        return Result(nil, None)
+    n = convert_number(head.string)
+    return Result(n, None)
+
+def to_list_wrapper(ctx, list):
+    res = check_single_string(list)
+    if res.failed():
+        return res
+    head = list.head
+    res = string_to_list(head.string)
+    if res.failed():
+        return Result(nil, None)
+    return res
+
+def to_exact_wrapper(ctx, list):
+    res = check_single_argument(list)
+    if res.failed():
+        return res
+    head = list.head
+    if type(head) is Number:
+        out = Number(Fraction(head.number))
+        return Result(out, None)
+    elif type(head) is String:
+        if not is_valid_number(head.string):
+            return Result(nil, None)
+        old = convert_number(head.string)
+        n = Number(Fraction(old.number))
+        return Result(n, None)
+    else:
+        err = ctx.error("expected number or string", list.range)
+        return Result(None, err)
+
+def to_inexact_wrapper(ctx, list):
+    res = check_single_argument(list)
+    if res.failed():
+        return res
+    head = list.head
+    if type(head) is Number:
+        out = Number(float(head.number))
+        return Result(out, None)
+    elif type(head) is String:
+        if not is_valid_number(head.string):
+            return Result(nil, None)
+        old = convert_number(head.string)
+        n = Number(float(old.number))
+        return Result(n, None)
+    else:
+        err = ctx.error("expected number or string", list.range)
+        return Result(None, err)
 
 ### ARITHMETIC
 

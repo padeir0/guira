@@ -2,6 +2,7 @@ import lexkind
 from lexer import Lexer
 from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, ListBuilder
 from fractions import Fraction
+from coreutil import convert_number
 
 def parse(modname, string, track):
     parser = _Parser(Lexer(modname, string))
@@ -353,7 +354,7 @@ def _atom(parser):
         s.range = word.range
         return Result(s, None)
     elif word.kind == lexkind.NUM:
-        s = convert_num(word.text)
+        s = convert_number(word.text)
         s.range = word.range
         return Result(s, None)
     elif word.kind == lexkind.STR:
@@ -387,11 +388,3 @@ def _pylist_to_list(pylist):
             last.tail = List(item, nil)
             last = last.tail
     return root
-
-def convert_num(lit):
-    lit = lit.replace("~", "-")
-    if "." in lit:
-        return Number(float(lit))
-    if "/" in lit:
-        return Number(Fraction(lit))
-    return Number(int(lit))

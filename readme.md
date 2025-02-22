@@ -147,10 +147,10 @@ ident_begin = /[a-zA-Z_<>\?=!\-\+\*\/\%\$]/.
 ident_continue = ident_begin | digit.
 
 num = hex | bin | dec.
-dec = [neg] integer [frac | float].
+dec = [neg] integer [frac | float] [exp].
 integer = digit {digit_}.
 frac = '/' integer.
-float = '.' integer [exp].
+float = '.' integer.
 exp = 'e' [neg] integer.
 
 hex = '0x' hexdigits.

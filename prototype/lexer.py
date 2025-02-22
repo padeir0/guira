@@ -171,20 +171,23 @@ class Lexer:
         if r == "~":
             self._next_rune()
         self._integer()
+
         r = self._peek_rune()
         if r == '.':
             self._next_rune()
             self._integer()
-            r = self._peek_rune()
-            if r == 'e':
-                self._next_rune()
-                r = self._peek_rune()
-                if r == "~":
-                    self._next_rune()
-                self._integer()
         elif r == '/':
             self._next_rune()
             self._integer()
+
+        r = self._peek_rune()
+        if r == 'e':
+            self._next_rune()
+            r = self._peek_rune()
+            if r == "~":
+                self._next_rune()
+            self._integer()
+
         return self._emit(lexkind.NUM)
 
     def _num_hex(self):

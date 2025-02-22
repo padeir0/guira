@@ -3,4 +3,4 @@
   abort "fail 1"
   nil
 
-print "pp.guira: OK"
+print "first_class_form.guira: OK"

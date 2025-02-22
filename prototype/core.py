@@ -207,10 +207,8 @@ class Symbol:
         return self.range
 
 # implements a numerical tower
-# use: from fractions import Fraction
-# to implement rational numbers
 # the tower will be:
-#     Integer -> Rational -> Decimal
+#     Integer -> Rational -> float/Decimal
 # Types are coerced accordingly
 class Number:
     def __init__(self, number):
