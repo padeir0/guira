@@ -3,7 +3,7 @@ from parser import parse
 from lexer import lex
 from core import List, Symbol, ListBuilder
 from evaluator import eval_each, eval, Call_Node, Context, Scope
-from intrinsics import build_scope
+from intrinsics import core_symbols
 import scopekind
 import os
 import sys
@@ -86,7 +86,8 @@ def eval_file(file_path):
         return
     modname = os.path.basename(file_path)
     modname = modname[:len(modname)-6] # removes ".guira"
-    builtins = build_scope()
+    builtins = Scope(None, scopekind.Intrinsic)
+    core_symbols(builtins)
     modscope = Scope(builtins, scopekind.Module)
     modscope.name = modname
     ctx = Context(modscope)

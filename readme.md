@@ -162,19 +162,3 @@ neg = '~'.
 digit = /[0-9]/.
 digit_ = digit | '_'.
 ```
-
-## Future
-
-One ambitious but interesting goal is to be able to "compile"
-the source code to a binary representation. This binary
-representation should be a compact representation of
-lists, with all strings and symbols internalized.
-
-This may reduce the size of the source code by
-quite a bit, and will be undoubtedly smaller than
-a native binary.
-
-Allowing embedding of binary data within this format is
-also an interesting concept: it can create self
-describing data formats, and contain entire appplications
-and instalation scripts in a single file.

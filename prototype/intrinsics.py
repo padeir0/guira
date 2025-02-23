@@ -5,9 +5,7 @@ from fractions import Fraction
 from decimal import Decimal
 import scopekind
 
-def build_scope():
-    scope = Scope(None, scopekind.Intrinsic)
-
+def core_symbols(scope):
     scope.add_symbol("nil",   nil)
     scope.add_symbol("true",  true)
     scope.add_symbol("false", false)
@@ -18,6 +16,8 @@ def build_scope():
     add_form(scope, "if",       if_wrapper)
     add_form(scope, "begin",    begin_wrapper)
     add_form(scope, "quote",    quote_wrapper)
+    # TODO: FEAT: 'doc' special form for documentation
+    # TODO: FEAT: 'import' special form to bring intrinsic modules in scope
 
     add_function(scope, "string?",   pred_string_wrapper)
     add_function(scope, "number?",   pred_number_wrapper)
@@ -39,62 +39,18 @@ def build_scope():
     add_function(scope, "to-exact",   to_exact_wrapper)
     add_function(scope, "to-inexact", to_inexact_wrapper)
     add_function(scope, "max-precision", max_precision_wrapper)
+    # TODO: FEAT: numerator   num -> num
+    # TODO: FEAT: denominator num -> num
 
-
-    # LIST FUNCTIONS
-    # TODO: FEAT: list        any . any -> list
-    # TODO: FEAT: map         list function -> list
-    # TODO: FEAT: filter      list function -> list
-    # (inverse of filter)
-    # TODO: FEAT: remove      list function -> list
-    # (special case of 'remove')
-    # TODO: FEAT: delete      list any -> list
-    # (uses the predicate to return partition list into two lists)
-    # TODO: FEAT: partition   list function -> list
-    # TODO: FEAT: reduce      list function any -> any
-    # TODO: FEAT: for-each    list function -> nil
-    # TODO: FEAT: reverse     list -> list
-    # (uses function as an acessor, ex: [unique list head])
-    # TODO: FEAT: unique      list function -> list
-    # (similar to unique, but only returns true or false)
-    # TODO: FEAT: unique?     list function -> bool
-    # TODO: FEAT: length      list -> num
-    # TODO: FEAT: sort        list -> list
-    # (joins each element of the list with a separator)
-    # (count start step)
-    # TODO: FEAT: range       num num num -> list
-    # (later gator)
-    # TODO: FEAT: zip         list . list -> list
-    # TODO: FEAT: unzip       list -> list
-    # TODO: FEAT: last        list -> any
-    # (appends the lists in sequence, [join a b] is the same as 
-    #  [append a b] in other lisps)
-    # TODO: FEAT: join        list . list -> list
-    # (applies predicate across the lists,
-    # returning true if predicate returns true on any application)
-    # TODO: FEAT: any         list function -> bool
-    # (applies predicate across the lists,
-    # returning true if predicate returns true on every application)
-    # TODO: FEAT: every       list function -> bool
 
     # STRING FUNCTIONS
     # TODO: FEAT: concat      string . string -> string
+    # (follow go formatting rules)
     # TODO: FEAT: format      string . any -> string
     # TODO: FEAT: slice       string num num -> string
-    # TODO: FEAT: join-str    list string -> string
-
-    # I/O FUNCTIONS
-    # (open a file and read all the contents as a string)
-    # TODO: FEAT: read        string -> string
-    # (open a file and use a string to rewrite all the contents)
-    # TODO: FEAT: write       string string -> string/nil
-    # (to execute some shell code)
-    # TODO: FEAT: exec        string -> string
-
-    # TODO: FEAT: floor       num -> num
-    # TODO: FEAT: ceil        num -> num
-    # (truncates a number to a max of N digits)
-    # TODO: FEAT: trunc       num num -> num
+    # TODO: FEAT: str-len     string -> num
+    # (joins each element of the list with a separator)
+    # TODO: FEAT: join        list string -> string
 
     add_form(scope, "or",  or_wrapper)
     add_form(scope, "and", and_wrapper)
@@ -116,14 +72,23 @@ def build_scope():
     add_function(scope, "cons", cons_wrapper)
     add_function(scope, "head", head_wrapper)
     add_function(scope, "tail", tail_wrapper)
+    # LIST FUNCTIONS
+    # TODO: FEAT: last        list -> any
+    # TODO: FEAT: list        any . any -> list
+    # TODO: FEAT: length      list -> num
+    # TODO: FEAT: append      list . list -> list
+    # TODO: FEAT: map         list function -> list
+    # TODO: FEAT: filter      list function -> list
+    # TODO: FEAT: reduce      list function any -> any
+    # TODO: FEAT: for-each    list function -> nil
+    # TODO: FEAT: reverse     list -> list
 
     add_function(scope, "eval",  eval)
     # TODO: FEAT: apply       function/form list -> any
 
     add_function(scope, "print", print_wrapper)
     add_function(scope, "abort", abort_wrapper)
-
-    return scope
+    return
 
 ### UTILS
 def add_function(scope, name, wrapper):
@@ -735,6 +700,7 @@ def _eval_unquoted(ctx, list):
             curr = nil
     return Result(builder.list(), None)
 
+# TODO: FEAT: implement unquote-splicing as "splice"
 # quasiquote expr
 def quote_wrapper(ctx, list):
     if list == nil or type(list) is List and list.tail != nil:
@@ -796,3 +762,91 @@ def begin_wrapper(ctx, list):
             out = res.value
 
     return Result(out, None)
+
+####
+#  the remainder of intrinsics will be implemented on cguira only
+####
+
+def list_util_symbols(scope):
+    # LIST FUNCTIONS
+    # (inverse of filter)
+    # FEAT: remove      list function -> list
+    # (special case of 'remove')
+    # FEAT: delete      list any -> list
+    # (uses the predicate to return partitioned list into two lists)
+    # FEAT: partition   list function -> list
+    # (uses function as an acessor, ex: [unique list head])
+    # FEAT: unique      list function -> list
+    # (similar to unique, but only returns true or false)
+    # FEAT: unique?     list function -> bool
+    # FEAT: sort        list -> list
+    # (count start step)
+    # FEAT: range       num num num -> list
+    # FEAT: zip         list . list -> list
+    # FEAT: unzip       list -> list
+    # (applies predicate across the lists,
+    # returning true if predicate returns true on any application)
+    # FEAT: any         list function -> bool
+    # (applies predicate across the lists,
+    # returning true if predicate returns true on every application)
+    # FEAT: every       list function -> bool
+    pass
+
+def str_util_symbols(scope):
+    # (removes trailing and leading whitespace)
+    # FEAT: trim-str    string -> string
+    # (pad string with whitespace in the left and right by specified amount)
+    # FEAT: pad-str     string string num num -> string
+    # (returns the start of the substring, 'nil' if not found)
+    # FEAT: substring?  string string -> num/nil
+    # FEAT: prefix?     string string -> bool
+    # FEAT: suffix?     string string -> bool
+    # FEAT: char-map    string function -> string
+    # FEAT: char-filter string function -> string
+    # (source string, substring, replacement) -> string
+    # FEAT: replace     string string string -> string
+    pass
+
+def math_symbols(scope):
+    # (returns N digits of pi)
+    # FEAT: pi          num -> num
+    # FEAT: floor       num -> num
+    # FEAT: ceiling     num -> num
+    # FEAT: round       num -> num
+    # (truncates a number to a max of N digits, if N = 0, returns an integer)
+    # FEAT: truncate    num num -> num
+    # FEAT: sqrt        num -> num
+    # FEAT: sin         num -> num
+    # FEAT: cos         num -> num
+    # FEAT: tan         num -> num
+    # computes e^num
+    # FEAT: exp         num -> num
+    # computes log to arbitrary integer base
+    # FEAT: log         num num -> num
+    # FEAT: log2        num -> num
+    # FEAT: abs         num -> num
+    # FEAT: max         num . num -> num
+    # FEAT: min         num . num -> num
+    # FEAT: remainder   num num -> num
+    # FEAT: modulo      num num -> num
+    # (numbers must be integers)
+    # FEAT: gcd         num . num -> num
+    # FEAT: lcm         num . num -> num
+    # (returns a list of factors, number must be integer)
+    # FEAT: factorize   num -> list
+    # (returns random integer between N and M
+    # FEAT: random      num num -> num
+    pass
+
+# the REPL can preload these symbols
+def io_symbols(scope):
+    # (open a file and read all the contents as a string)
+    # FEAT: file-read   string -> string
+    # (open a file and use a string to rewrite all the contents)
+    # FEAT: file-write  string string -> string/nil
+    # FEAT: file-append string string -> string/nil
+    # (to execute some shell code)
+    # FEAT: exec        string -> string
+    # (loads a guira file into current scope)
+    # FEAT: load        string -> nil
+    pass
