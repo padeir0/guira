@@ -159,6 +159,7 @@ class Context:
         self.builtin_scope = builtin_scope
         self.curr_call_node = Call_Node(None, builtin_scope)
         self.verbose = False
+        self.precision = 8
 
     def find_module_name(self):
         curr_scope = self.curr_call_node.curr_scope

@@ -76,11 +76,36 @@ if [!= [to-exact 1.0] 1]
 if [!= [to-exact ~1.0] ~1]
    abort "fail 5b"
    nil
-if [!= [to-exact [* 1/3 3.0]] 1]
+if [!= [to-exact [* 1/3 3]] 1]
    abort "fail 5c"
    nil
 if [!= [to-exact 1.0e10] 1e10]
    abort "fail 5d"
    nil
 
+###
+max-precision 4
+if [!= [to-inexact 1] 1.0]
+   abort "fail 6a"
+   nil
+if [!= [to-inexact ~1] ~1.0]
+   abort "fail 6b"
+   nil
+if [!= [to-inexact [* 1/3 3]] 1.0]
+   abort "fail 6c"
+   nil
+if [!= [to-inexact 1e10] 1.0e10]
+   abort "fail 6d"
+   nil
+if [!= [to-inexact 1/3] 0.3333]
+   abort "fail 6e"
+   nil
+if [!= [to-inexact 1/5] 0.2]
+   abort "fail 6f"
+   nil
+if [!= [to-inexact 22/7] 3.1429]
+   abort "fail 6g"
+   nil
+
+###
 print "conversions.guira: OK"

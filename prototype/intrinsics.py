@@ -1,7 +1,8 @@
-from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, true, false, ListBuilder
+from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, true, false, ListBuilder, to_dec, to_frac
 from evaluator import eval, Scope, Intrinsic_Function, Function, Form, Intrinsic_Form
-from coreutil import is_valid_identifier, is_valid_number, convert_number, string_to_list
+from util import is_valid_identifier, is_valid_number, convert_number, string_to_list
 from fractions import Fraction
+from decimal import Decimal
 import scopekind
 
 def build_scope():
@@ -34,24 +35,53 @@ def build_scope():
     add_function(scope, "to-symbol",  to_symbol_wrapper)
     add_function(scope, "to-number",  to_number_wrapper)
     add_function(scope, "to-list",    to_list_wrapper)
+
     add_function(scope, "to-exact",   to_exact_wrapper)
     add_function(scope, "to-inexact", to_inexact_wrapper)
+    add_function(scope, "max-precision", max_precision_wrapper)
+
 
     # LIST FUNCTIONS
     # TODO: FEAT: list        any . any -> list
     # TODO: FEAT: map         list function -> list
     # TODO: FEAT: filter      list function -> list
+    # (inverse of filter)
+    # TODO: FEAT: remove      list function -> list
+    # (special case of 'remove')
+    # TODO: FEAT: delete      list any -> list
+    # (uses the predicate to return partition list into two lists)
+    # TODO: FEAT: partition   list function -> list
     # TODO: FEAT: reduce      list function any -> any
     # TODO: FEAT: for-each    list function -> nil
     # TODO: FEAT: reverse     list -> list
-    # (possible future optimization: attach a hashmap to a list for faster lookups)
-    # TODO: FEAT: exists?     list any -> bool
-    # TODO: FEAT: lookup      list any -> any
+    # (uses function as an acessor, ex: [unique list head])
+    # TODO: FEAT: unique      list function -> list
+    # (similar to unique, but only returns true or false)
+    # TODO: FEAT: unique?     list function -> bool
+    # TODO: FEAT: length      list -> num
+    # TODO: FEAT: sort        list -> list
+    # (joins each element of the list with a separator)
+    # (count start step)
+    # TODO: FEAT: range       num num num -> list
+    # (later gator)
+    # TODO: FEAT: zip         list . list -> list
+    # TODO: FEAT: unzip       list -> list
+    # TODO: FEAT: last        list -> any
+    # (appends the lists in sequence, [join a b] is the same as 
+    #  [append a b] in other lisps)
+    # TODO: FEAT: join        list . list -> list
+    # (applies predicate across the lists,
+    # returning true if predicate returns true on any application)
+    # TODO: FEAT: any         list function -> bool
+    # (applies predicate across the lists,
+    # returning true if predicate returns true on every application)
+    # TODO: FEAT: every       list function -> bool
 
     # STRING FUNCTIONS
     # TODO: FEAT: concat      string . string -> string
     # TODO: FEAT: format      string . any -> string
     # TODO: FEAT: slice       string num num -> string
+    # TODO: FEAT: join-str    list string -> string
 
     # I/O FUNCTIONS
     # (open a file and read all the contents as a string)
@@ -60,6 +90,11 @@ def build_scope():
     # TODO: FEAT: write       string string -> string/nil
     # (to execute some shell code)
     # TODO: FEAT: exec        string -> string
+
+    # TODO: FEAT: floor       num -> num
+    # TODO: FEAT: ceil        num -> num
+    # (truncates a number to a max of N digits)
+    # TODO: FEAT: trunc       num num -> num
 
     add_form(scope, "or",  or_wrapper)
     add_form(scope, "and", and_wrapper)
@@ -251,7 +286,7 @@ def pred_inexact_wrapper(ctx, list):
     if res.failed():
         return res
     arg = list.head
-    if type(arg) is Number and type(arg.number) is float:
+    if type(arg) is Number and type(arg.number) is Decimal:
         return Result(true, None)
     return Result(false, None)
 
@@ -294,19 +329,21 @@ def to_list_wrapper(ctx, list):
         return Result(nil, None)
     return res
 
+### NUMBER CONVERSIONS
+
 def to_exact_wrapper(ctx, list):
     res = check_single_argument(list)
     if res.failed():
         return res
     head = list.head
     if type(head) is Number:
-        out = Number(Fraction(head.number))
+        out = Number(to_frac(head.number, ctx.precision))
         return Result(out, None)
     elif type(head) is String:
         if not is_valid_number(head.string):
             return Result(nil, None)
         old = convert_number(head.string)
-        n = Number(Fraction(old.number))
+        n = Number(to_frac(old.number, ctx.precision))
         return Result(n, None)
     else:
         err = ctx.error("expected number or string", list.range)
@@ -318,17 +355,28 @@ def to_inexact_wrapper(ctx, list):
         return res
     head = list.head
     if type(head) is Number:
-        out = Number(float(head.number))
+        out = Number(to_dec(head.number, ctx.precision))
         return Result(out, None)
     elif type(head) is String:
         if not is_valid_number(head.string):
             return Result(nil, None)
         old = convert_number(head.string)
-        n = Number(float(old.number))
+        n = Number(to_dec(old.number, ctx.precision))
         return Result(n, None)
     else:
         err = ctx.error("expected number or string", list.range)
         return Result(None, err)
+
+def max_precision_wrapper(ctx, list):
+    res = check_single_argument(list)
+    if res.failed():
+        return res
+    head = list.head
+    if type(head) is Number and type(head.number) is int:
+        ctx.precision = head.number
+        return Result(None, None)
+    err = ctx.error("expected integer", list.range)
+    return Result(None, err)
 
 ### ARITHMETIC
 
@@ -343,7 +391,7 @@ def sum_wrapper(ctx, list):
         if type(curr.head) != Number:
             err = ctx.error("expected number", curr.head.range)
             return Result(None, err)
-        out.add(curr.head)
+        out.add(curr.head, ctx.precision)
         curr = curr.tail
     return Result(out, None)
 
@@ -356,14 +404,14 @@ def minus_wrapper(ctx, list):
     if type(curr.head) != Number:
         err = ctx.error("expected number", curr.head.range)
         return Result(None, err)
-    out = Number(0).add(curr.head) # make a copy
+    out = Number(0).add(curr.head, ctx.precision) # make a copy
     curr = curr.tail
 
     while curr != nil:
         if type(curr.head) != Number:
             err = ctx.error("expected number", curr.head.range)
             return Result(None, err)
-        out.sub(curr.head)
+        out.sub(curr.head, ctx.precision)
         curr = curr.tail
     return Result(out, None)
 
@@ -378,7 +426,7 @@ def mult_wrapper(ctx, list):
         if type(curr.head) != Number:
             err = ctx.error("expected number", curr.head.range)
             return Result(None, err)
-        out.mult(curr.head)
+        out.mult(curr.head, ctx.precision)
         curr = curr.tail
     return Result(out, None)
 
@@ -391,20 +439,20 @@ def div_wrapper(ctx, list):
     if type(curr.head) != Number:
         err = ctx.error("expected number", curr.head.range)
         return Result(None, err)
-    out = Number(0).add(curr.head) # make a copy
+    out = Number(0).add(curr.head, ctx.precision) # make a copy
     curr = curr.tail
     if type(out.number) is int:
         out.number = Fraction(out.number)
 
     if curr == nil:
-        out = Number(1).div(out)
+        out = Number(1).div(out, ctx.precision)
         return Result(out, None)
 
     while curr != nil:
         if type(curr.head) != Number:
             err = ctx.error("expected number", curr.head.range)
             return Result(None, err)
-        out.div(curr.head)
+        out.div(curr.head, ctx.precision)
         curr = curr.tail
     return Result(out, None)
 

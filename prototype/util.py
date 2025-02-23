@@ -3,6 +3,7 @@ import lexkind
 import parser
 from core import Number
 from fractions import Fraction
+from decimal import Decimal
 
 def is_valid_identifier(string):
     l = lexer.Lexer("", string)
@@ -17,7 +18,7 @@ def is_valid_number(string):
 def convert_number(lit):
     lit = lit.replace("~", "-")
     if "." in lit:
-        return Number(float(lit))
+        return Number(Decimal(lit))
     if "/" in lit:
         if "e" in lit:
             a = lit.split("e")
@@ -32,3 +33,4 @@ def convert_number(lit):
 
 def string_to_list(string):
     return parser.parse("", string, False)
+

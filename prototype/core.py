@@ -1,5 +1,6 @@
 import lexkind
 from fractions import Fraction
+from decimal import Decimal, ROUND_HALF_EVEN
 
 class Result:
     def __init__(self, value, error):
@@ -208,7 +209,7 @@ class Symbol:
 
 # implements a numerical tower
 # the tower will be:
-#     Integer -> Rational -> float/Decimal
+#     Integer -> Rational -> Decimal
 # Types are coerced accordingly
 class Number:
     def __init__(self, number):
@@ -222,30 +223,47 @@ class Number:
         return self.range.start.column
     def compute_ranges(self):
         return self.range
-    def add(self, other):
-        a, b = _retype(self, other)
+    def add(self, other, prec):
+        a, b = _retype(self, other, prec)
         self.number = a + b
         return self
-    def sub(self, other):
-        a, b = _retype(self, other)
+    def sub(self, other, prec):
+        a, b = _retype(self, other, prec)
         self.number = a - b
         return self
-    def mult(self, other):
-        a, b = _retype(self, other)
+    def mult(self, other, prec):
+        a, b = _retype(self, other, prec)
         self.number = a * b
         return self
-    def div(self, other):
-        a, b = _retype(self, other)
+    def div(self, other, prec):
+        a, b = _retype(self, other, prec)
         self.number = a / b
         return self
 
-def _retype(self, other):
-    if type(self.number) is float or type(other.number) is float:
-        return float(self.number), float(other.number)
+def _retype(self, other, prec):
+    if type(self.number) is Decimal or type(other.number) is Decimal:
+        return to_dec(self.number, prec), to_dec(other.number, prec)
     if type(self.number) is Fraction or type(other.number) is Fraction:
-        return Fraction(self.number), Fraction(other.number)
+        return to_frac(self.number, prec), to_frac(other.number, prec)
     # they are ints.
     return self.number, other.number
+
+def to_frac(num, n):
+    if type(num) is Decimal:
+        factor = Decimal(10) ** n
+        truncated = (num * factor).to_integral_value(rounding=ROUND_HALF_EVEN) / factor
+        return Fraction(truncated)
+    if type(num) is int:
+        return Fraction(num)
+    return Fraction(num)
+
+def to_dec(num, n):
+    if type(num) is Fraction:
+        dec = Decimal(num.numerator) / Decimal(num.denominator)
+        return dec.quantize(Decimal(10) ** -n, rounding=ROUND_HALF_EVEN)
+    if type(num) is int:
+        return Decimal(num)
+    return Decimal(num)
 
 class String:
     def __init__(self, string):

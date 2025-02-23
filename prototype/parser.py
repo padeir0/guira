@@ -2,7 +2,7 @@ import lexkind
 from lexer import Lexer
 from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, ListBuilder
 from fractions import Fraction
-from coreutil import convert_number
+from util import convert_number
 
 def parse(modname, string, track):
     parser = _Parser(Lexer(modname, string))
