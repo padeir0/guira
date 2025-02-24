@@ -1,0 +1,8 @@
+# i know, bad tests
+let eval-each [for eval]
+
+if [function? eval-each]
+   nil
+   abort "fail 1"
+
+print "for.guira: OK"

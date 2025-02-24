@@ -1,0 +1,22 @@
+if
+  != [fold + 0 [list 1 2 3 4]] 10
+  abort "fail 1"
+  nil
+if
+  != [fold * 1 [list 1 2 3 4]] 24
+  abort "fail 2"
+  nil
+if
+  != [fold / 1 [list 1 2 3 4]] 1/24
+  abort "fail 3"
+  nil
+
+let sum
+  fold + 0
+
+if
+  != [sum [list 1 2 3 4]] 10
+  abort "fail 4"
+  nil
+
+print "fold.guira: OK"

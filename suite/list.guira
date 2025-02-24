@@ -1,0 +1,14 @@
+if
+  != [list 1 2 3] [quote [1 2 3]]
+  abort "fail 1a"
+  nil
+if
+  != [list 1] [quote [1]]
+  abort "fail 1b"
+  nil
+if
+  != [list [list 1 2 3] [list 4 5 6]] [quote [[1 2 3] [4 5 6]]]
+  abort "fail 1c"
+  nil
+
+print "list.guira: OK"

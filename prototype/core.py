@@ -189,8 +189,11 @@ class List:
         curr = self
         i = 0
         while curr != nil:
-            i += 1
-            curr = curr.tail
+            if type(curr) is List:
+                i += 1
+                curr = curr.tail
+            else:
+                curr = nil
         return i
 
 # identifiers
@@ -283,6 +286,12 @@ class ListBuilder:
         self.root = None
         self.last = None
 
+    def proper(self):
+        return self.last == None or type(self.last) == List
+
+    def improper(self):
+        return not self.proper()
+
     def append_end(self, item):
         if self.root == None:
             raise Exception("list is None")
@@ -306,6 +315,8 @@ class ListBuilder:
         self.last = self.last.tail
 
     def append_list(self, list):
+        if list == nil:
+            return
         if type(list) != List:
             raise Exception("expected list")
 

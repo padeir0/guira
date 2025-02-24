@@ -100,6 +100,8 @@ def eval_file(file_path):
             if res.failed():
                 print_error(res.error, file_contents)
             else:
+                if res.value == None:
+                    return
                 res.value.compute_ranges()
                 res = eval_each(ctx, res.value)
                 if res.failed():

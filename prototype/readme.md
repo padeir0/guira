@@ -25,7 +25,7 @@ nil true false
 ```
 string? number?   list? atom?
 symbol? function? form? nil?
-exact?  inexact?
+exact?  inexact?  proper? improper?
 
 to-string to-symbol
 to-number to-list
@@ -39,10 +39,12 @@ not
 
 + - * /
 
-cons   head tail   last   list     length
-append map  filter reduce for-each reverse
+cons   head tail   last   list length
+append map  filter fold   for  reverse
+range  
 
 join concat format slice str-len
+split
 
 eval apply
 

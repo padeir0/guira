@@ -1,0 +1,19 @@
+if
+  !=
+    filter
+      symbol?
+      list [quote a] 2 [quote b] 3 4
+    quote [a b]
+  abort "fail 1"
+  nil
+
+if
+  !=
+    filter
+      number?
+      list [quote a] 2 [quote b] 3 4
+    list 2 3 4
+  abort "fail 2"
+  nil
+
+print "filter.guira: OK"

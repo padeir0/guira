@@ -1,0 +1,20 @@
+if
+  !=
+    reverse [list 1 2 3]
+    [list 3 2 1]
+  abort "fail 1"
+  nil
+if
+  !=
+    reverse [list 1]
+    [list 1]
+  abort "fail 2"
+  nil
+if
+  !=
+    reverse nil
+    nil
+  abort "fail 3"
+  nil
+
+print "reverse.guira: OK"

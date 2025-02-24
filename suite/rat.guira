@@ -1,0 +1,31 @@
+if 
+  != [denominator 1] 1
+  abort "fail 1a"
+  nil
+if 
+  != [denominator 1/2] 2
+  abort "fail 1b"
+  nil
+if 
+  != [denominator 0] 1
+  abort "fail 1c"
+  nil
+
+if 
+  != [numerator 0] 0
+  abort "fail 2a"
+  nil
+if 
+  != [numerator 1] 1
+  abort "fail 2b"
+  nil
+if 
+  != [numerator 1/2] 1
+  abort "fail 2c"
+  nil
+if 
+  != [numerator 3/4] 3
+  abort "fail 2d"
+  nil
+
+print "rat.guira: OK"

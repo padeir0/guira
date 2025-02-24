@@ -284,9 +284,11 @@ def _ml_pairs(parser):
     _discard_nl(parser)
     builder = ListBuilder()
 
-    res = parser.expect_prod(_pair, "expression")
+    res = _pair(parser)
     if res.failed():
         return res
+    if res.value == None:
+        return Result(nil, None)
     builder.append_item(res.value)
 
     res = parser.repeat(_ml_pair)
