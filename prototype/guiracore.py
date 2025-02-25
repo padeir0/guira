@@ -1,5 +1,5 @@
 from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, true, false, ListBuilder, to_dec, to_frac
-from evaluator import eval, Scope, Intrinsic_Function, Function, Form, Intrinsic_Form
+from evaluator import eval, apply, Scope, Intrinsic_Function, Function, Form, Intrinsic_Form
 from util import is_valid_identifier, is_valid_number, convert_number, string_to_list
 from fractions import Fraction
 from decimal import Decimal
@@ -95,8 +95,8 @@ def core_symbols(scope):
     # TODO: FEAT: unique      list -> list
     # TODO: FEAT: sort        list -> list
 
-    add_function(scope, "eval",  eval)
-    # TODO: FEAT: apply       function/form list -> any
+    add_function(scope, "eval",  eval_wrapper)
+    add_function(scope, "apply",  apply_wrapper)
 
     add_function(scope, "print", print_wrapper)
     add_function(scope, "abort", abort_wrapper)
@@ -193,14 +193,36 @@ def format_args(args):
             curr = nil
     return Result(args, None)
 
-def check_single_argument(ctx, list):
-    if list == nil or type(list) is List and list.tail != nil:
-        err = ctx.error("invalid number of arguments", None)
+def check_num_args(ctx, list, num):
+    if list == nil or type(list) != List or list.length() != num:
+        msg = f"expected {num} arguments"
+        err = ctx.error(msg, None)
+        return Result(None, err)
+    return Result(None, None)
+
+def _len_between(list, start, end):
+    len = list.length()
+    return start <= len or len <= end
+
+def check_num_args_between(ctx, list, start, end):
+    if (list == nil or
+        type(list) != List or
+        not _len_between(list, start, end)):
+
+        msg = f"expected between {start} and {end} arguments"
+        err = ctx.error(msg, None)
+        return Result(None, err)
+
+    return Result(None, None)
+
+def check_args_nil(ctx, list):
+    if list == nil or type(list) != List:
+        err = ctx.error("invalid argument", None)
         return Result(None, err)
     return Result(None, None)
 
 def check_single_string(ctx, list):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     head = list.head
@@ -210,7 +232,7 @@ def check_single_string(ctx, list):
     return Result(None, None)
 
 def predicate(ctx, list, kinds):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     arg = list.head
@@ -250,7 +272,7 @@ def pred_symbol_wrapper(ctx, list):
 ### SUBTYPE PREDICATES
 
 def pred_exact_wrapper(ctx, list):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     arg = list.head
@@ -259,7 +281,7 @@ def pred_exact_wrapper(ctx, list):
     return Result(false, None)
 
 def pred_inexact_wrapper(ctx, list):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     arg = list.head
@@ -269,7 +291,7 @@ def pred_inexact_wrapper(ctx, list):
 
 ### CONVERSION FUNCTIONS
 def to_string_wrapper(ctx, list):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
 
@@ -277,7 +299,7 @@ def to_string_wrapper(ctx, list):
     return Result(String(out), None)
 
 def to_symbol_wrapper(ctx, list):
-    res = check_single_string(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     head = list.head
@@ -287,7 +309,7 @@ def to_symbol_wrapper(ctx, list):
     return Result(sy, None)
 
 def to_number_wrapper(ctx, list):
-    res = check_single_string(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     head = list.head
@@ -297,7 +319,7 @@ def to_number_wrapper(ctx, list):
     return Result(n, None)
 
 def to_list_wrapper(ctx, list):
-    res = check_single_string(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     head = list.head
@@ -309,7 +331,7 @@ def to_list_wrapper(ctx, list):
 ### NUMBER CONVERSIONS
 
 def to_exact_wrapper(ctx, list):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     head = list.head
@@ -327,7 +349,7 @@ def to_exact_wrapper(ctx, list):
         return Result(None, err)
 
 def to_inexact_wrapper(ctx, list):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     head = list.head
@@ -345,7 +367,7 @@ def to_inexact_wrapper(ctx, list):
         return Result(None, err)
 
 def max_precision_wrapper(ctx, list):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     head = list.head
@@ -356,7 +378,7 @@ def max_precision_wrapper(ctx, list):
     return Result(None, err)
 
 def numerator_wrapper(ctx, list):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     head = list.head
@@ -375,7 +397,7 @@ def numerator_wrapper(ctx, list):
     return Result(None, err)
 
 def denominator_wrapper(ctx, list):
-    res = check_single_argument(ctx, list)
+    res = check_num_args(ctx, list, 1)
     if res.failed():
         return res
     head = list.head
@@ -396,9 +418,9 @@ def denominator_wrapper(ctx, list):
 ### ARITHMETIC
 
 def sum_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     out = Number(0)
     curr = list
@@ -411,9 +433,9 @@ def sum_wrapper(ctx, list):
     return Result(out, None)
 
 def minus_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     curr = list
     if type(curr.head) != Number:
@@ -431,9 +453,9 @@ def minus_wrapper(ctx, list):
     return Result(out, None)
 
 def mult_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     out = Number(1)
     curr = list
@@ -446,9 +468,9 @@ def mult_wrapper(ctx, list):
     return Result(out, None)
 
 def div_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     curr = list
     if type(curr.head) != Number:
@@ -474,9 +496,9 @@ def div_wrapper(ctx, list):
 ### LOGICAL FORMS
 
 def and_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     curr = list
     while curr != nil:
@@ -493,9 +515,9 @@ def and_wrapper(ctx, list):
     return Result(true, None)
 
 def or_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     curr = list
     while curr != nil:
@@ -514,9 +536,9 @@ def or_wrapper(ctx, list):
 ### LOGICAL OPERATOR
 
 def not_wrapper(ctx, list):
-    if list == nil or (type(list) is List and list.tail != nil):
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
 
     out = _not(list)
     return Result(out, None)
@@ -524,9 +546,9 @@ def not_wrapper(ctx, list):
 ### COMPARISON
 
 def eq_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     curr = list
     obj = curr.head
@@ -545,9 +567,9 @@ def neq_wrapper(ctx, list):
     return res
 
 def less_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     curr = list
     if type(curr.head) != Number:
@@ -574,9 +596,9 @@ def less_wrapper(ctx, list):
     return Result(true, None)
 
 def less_eq_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     curr = list
     if type(curr.head) != Number:
@@ -634,41 +656,33 @@ def cons_wrapper(ctx, list):
     return Result(out, None)
 
 def head_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
 
     if not (type(list.head) is List):
         err = ctx.error("argument is not a list", None)
         return Result(None, err)
     out = list.head.head
 
-    if list.tail != nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
-
     return Result(out, None)
 
 def tail_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
 
     if not (type(list.head) is List):
         err = ctx.error("argument is not a list", None)
         return Result(None, err)
     out = list.head.tail
 
-    if list.tail != nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
-
     return Result(out, None)
 
 def last_wrapper(ctx, list):
-    if list == nil or type(list) != List:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
     if type(list.head) != List:
         err = ctx.error("expected list", list.range)
         return Result(None, err)
@@ -688,18 +702,15 @@ def last_wrapper(ctx, list):
     return Result(None, err)
 
 def list_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
-    if type(list) is List:
-        return Result(list, None)
-    out = List(list, nil)
-    return Result(out, nil)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
+    return Result(list, None)
 
 def length_wrapper(ctx, list):
-    if list == nil or type(list) != List:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
     head = list.head
     if head == nil:
         out = Number(0)
@@ -713,9 +724,10 @@ def length_wrapper(ctx, list):
     return Result(out, None)
 
 def append_wrapper(ctx, list):
-    if list == nil or type(list) != List:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
+
     builder = ListBuilder()
     curr = list
     while curr != nil:
@@ -735,9 +747,10 @@ def append_wrapper(ctx, list):
     return Result(out, None)
 
 def reverse_wrapper(ctx, list):
-    if list == nil or type(list) != List:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+
     if list.head == nil:
         return Result(nil, None)
     if type(list.head) != List:
@@ -756,9 +769,10 @@ def reverse_wrapper(ctx, list):
     return Result(root, None)
 
 def map_wrapper(ctx, list):
-    if list == nil or type(list) != List:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args_between(ctx, list, 1, 2)
+    if res.failed():
+        return res
+
     f = list.head
 
     if not(type(f) in [Function, Intrinsic_Function]):
@@ -785,13 +799,13 @@ def map_wrapper(ctx, list):
         curr = l
         while curr != nil:
             if type(curr) is List:
-                res = f.call(ctx, List(curr.head, nil))
+                res = apply(ctx, f, List(curr.head, nil))
                 if res.failed():
                     return res
                 builder.append_item(res.value)
                 curr = curr.tail
             else:
-                res = f.call(ctx, List(curr, nil))
+                res = apply(ctx, f, List(curr, nil))
                 if res.failed():
                     return res
                 builder.append_end(res.value)
@@ -800,9 +814,10 @@ def map_wrapper(ctx, list):
         return Result(list, None)
 
 def filter_wrapper(ctx, list):
-    if list == nil or type(list) != List:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args_between(ctx, list, 1, 2)
+    if res.failed():
+        return res
+
     f = list.head
 
     if not(type(f) in [Function, Intrinsic_Function]):
@@ -829,14 +844,14 @@ def filter_wrapper(ctx, list):
         curr = l
         while curr != nil:
             if type(curr) is List:
-                res = f.call(ctx, List(curr.head, nil))
+                res = apply(ctx, f, List(curr.head, nil))
                 if res.failed():
                     return res
                 if res.value != false:
                     builder.append_item(curr.head)
                 curr = curr.tail
             else:
-                res = f.call(ctx, List(curr, nil))
+                res = apply(ctx, f, List(curr, nil))
                 if res.failed():
                     return res
                 if res.value != false:
@@ -848,9 +863,10 @@ def filter_wrapper(ctx, list):
         return Result(list, None)
 
 def fold_wrapper(ctx, list):
-    if list == nil or type(list) != List and list.length < 2:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args_between(ctx, list, 2, 3)
+    if res.failed():
+        return res
+
     f = list.head
     initial = list.tail.head
     tail = list.tail.tail
@@ -879,13 +895,13 @@ def fold_wrapper(ctx, list):
         curr = l
         while curr != nil:
             if type(curr) is List:
-                res = f.call(ctx, List(out, List(curr.head, nil)))
+                res = apply(ctx, f, List(out, List(curr.head, nil)))
                 if res.failed():
                     return res
                 out = res.value
                 curr = curr.tail
             else:
-                res = f.call(ctx, List(out, List(curr, nil)))
+                res = apply(ctx, f, List(out, List(curr, nil)))
                 if res.failed():
                     return res
                 out = res.value
@@ -893,9 +909,10 @@ def fold_wrapper(ctx, list):
         return Result(out, None)
 
 def for_wrapper(ctx, list):
-    if list == nil or type(list) != List:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args_between(ctx, list, 1, 2)
+    if res.failed():
+        return res
+
     f = list.head
 
     if not(type(f) in [Function, Intrinsic_Function]):
@@ -921,12 +938,12 @@ def for_wrapper(ctx, list):
         curr = l
         while curr != nil:
             if type(curr) is List:
-                res = f.call(ctx, List(curr.head, nil))
+                res = apply(ctx, f, List(curr.head, nil))
                 if res.failed():
                     return res
                 curr = curr.tail
             else:
-                res = f.call(ctx, List(curr, nil))
+                res = apply(ctx, f, List(curr, nil))
                 if res.failed():
                     return res
                 curr = nil
@@ -951,9 +968,9 @@ def abort_wrapper(ctx, list):
 ### INTRINSIC FORMS
 
 def if_wrapper(ctx, list):
-    if list == nil or list.length() != 3:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 3)
+    if res.failed():
+        return res
 
     cond_expr = list.head
     res = eval(ctx, cond_expr)
@@ -970,9 +987,10 @@ def if_wrapper(ctx, list):
         return eval(ctx, true_expr)
 
 def function_wrapper(ctx, list):
-    if list == nil or list.length() != 2:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 2)
+    if res.failed():
+        return res
+
     arguments = list.head
     body = list.tail.head
     res = format_args(arguments)
@@ -983,9 +1001,10 @@ def function_wrapper(ctx, list):
     return Result(f, None)
 
 def form_wrapper(ctx, list):
-    if list == nil or list.length() != 2:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 2)
+    if res.failed():
+        return res
+
     arguments = list.head
     body = list.tail.head
     res = format_args(arguments)
@@ -998,7 +1017,7 @@ def form_wrapper(ctx, list):
 def _eval_unquoted(ctx, list):
     if (type(list.head) is Symbol and
         list.head.symbol == "unquote"):
-        res = eval(ctx, list.tail)
+        res = eval(ctx, list.tail.head)
         if res.failed():
             return res
         return res
@@ -1023,9 +1042,10 @@ def _eval_unquoted(ctx, list):
 # TODO: FEAT: implement unquote-splicing as "splice"
 # quasiquote expr
 def quote_wrapper(ctx, list):
-    if list == nil or type(list) is List and list.tail != nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+
     head = list
     if type(list) is List:
         head = list.head
@@ -1037,9 +1057,9 @@ def quote_wrapper(ctx, list):
     return Result(head, None)
 
 def let_wrapper(ctx, list):
-    if list == nil or list.length() != 2:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_num_args(ctx, list, 2)
+    if res.failed():
+        return res
 
     id_expr = list.head
     value_expr = list.tail.head
@@ -1062,9 +1082,9 @@ def let_wrapper(ctx, list):
     return Result(nil, None)
 
 def begin_wrapper(ctx, list):
-    if list == nil:
-        err = ctx.error("invalid number of arguments", None)
-        return Result(None, err)
+    res = check_args_nil(ctx, list)
+    if res.failed():
+        return res
 
     out = None
     curr = list
@@ -1083,87 +1103,16 @@ def begin_wrapper(ctx, list):
 
     return Result(out, None)
 
-####
-#  the remainder of intrinsics will be implemented on cguira only
-####
+def eval_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+    return eval(ctx, list.head)
 
-def list_util_symbols(scope):
-    # LIST FUNCTIONS
-    # (same as fold, but without an initial value)
-    # FEAT: reduce      list function -> list
-    # (inverse of filter)
-    # FEAT: remove      list function -> list
-    # (special case of 'remove')
-    # FEAT: delete      list any -> list
-    # (uses the predicate to return partitioned list into two lists)
-    # FEAT: partition   list function -> list
-    # FEAT: sort        list -> list
-    # (count start step)
-    # FEAT: zip         list . list -> list
-    # FEAT: unzip       list -> list
-    # (applies predicate across the lists,
-    # returning true if predicate returns true on any application)
-    # FEAT: any         list function -> bool
-    # (applies predicate across the lists,
-    # returning true if predicate returns true on every application)
-    # FEAT: every       list function -> bool
-    pass
-
-def str_util_symbols(scope):
-    # (removes trailing and leading whitespace)
-    # FEAT: trim-str    string -> string
-    # (pad string with whitespace in the left and right by specified amount)
-    # FEAT: pad-str     string string num num -> string
-    # (returns the start of the substring, 'nil' if not found)
-    # FEAT: substring?  string string -> num/nil
-    # FEAT: prefix?     string string -> bool
-    # FEAT: suffix?     string string -> bool
-    # FEAT: char-map    string function -> string
-    # FEAT: char-filter string function -> string
-    # (source string, substring, replacement) -> string
-    # FEAT: replace     string string string -> string
-    pass
-
-def math_symbols(scope):
-    # (returns N digits of pi)
-    # FEAT: pi          num -> num
-    # FEAT: floor       num -> num
-    # FEAT: ceiling     num -> num
-    # FEAT: round       num -> num
-    # (truncates a number to a max of N digits, if N = 0, returns an integer)
-    # FEAT: truncate    num num -> num
-    # FEAT: sqrt        num -> num
-    # FEAT: sin         num -> num
-    # FEAT: cos         num -> num
-    # FEAT: tan         num -> num
-    # computes e^num
-    # FEAT: exp         num -> num
-    # computes log to arbitrary integer base
-    # FEAT: log         num num -> num
-    # FEAT: log2        num -> num
-    # FEAT: abs         num -> num
-    # FEAT: max         num . num -> num
-    # FEAT: min         num . num -> num
-    # FEAT: remainder   num num -> num
-    # FEAT: modulo      num num -> num
-    # (numbers must be integers)
-    # FEAT: gcd         num . num -> num
-    # FEAT: lcm         num . num -> num
-    # (returns a list of factors, number must be integer)
-    # FEAT: factorize   num -> list
-    # (returns random integer between N and M
-    # FEAT: random      num num -> num
-    pass
-
-# the REPL can preload these symbols
-def io_symbols(scope):
-    # (open a file and read all the contents as a string)
-    # FEAT: file-read   string -> string
-    # (open a file and use a string to rewrite all the contents)
-    # FEAT: file-write  string string -> string/nil
-    # FEAT: file-append string string -> string/nil
-    # (to execute some shell code)
-    # FEAT: exec        string -> string
-    # (loads a guira file into current scope)
-    # FEAT: load        string -> nil
-    pass
+def apply_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 2)
+    if res.failed():
+        return res
+    f = list.head
+    args = list.tail.head
+    return apply(ctx, f, args)

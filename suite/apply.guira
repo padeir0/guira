@@ -1,0 +1,20 @@
+if
+  != 
+    apply + [list 1 2 3 4]
+    10
+  abort "fail 1"
+  nil
+if
+  !=
+    apply * [list 1 2 3 4]
+    24
+  abort "fail 2"
+  nil
+if
+  !=
+    apply list [list 1 2 3 4]
+    [list 1 2 3 4]
+  abort "fail 3"
+  nil
+
+print "apply.guira: OK"

@@ -1,5 +1,17 @@
-if [eval [cons 1 nil]]
+if [eval 1]
    nil
-   abort 'fail 1'
+   abort "fail 1"
+if 
+   !=
+      eval quote:[+ 1 2 3]
+      6
+   abort "fail 2"
+   nil
+if 
+   !=
+      eval quote:[* 1 2 3]
+      6
+   abort "fail 3"
+   nil
 
 print "eval.guira: OK"

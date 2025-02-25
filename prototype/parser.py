@@ -4,6 +4,7 @@ from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, L
 from fractions import Fraction
 from util import convert_number
 
+# TODO: SUGAR: use: ',@ to serve as quote, unquote and splice respectivelly
 def parse(modname, string, track):
     parser = _Parser(Lexer(modname, string))
     if track:

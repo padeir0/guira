@@ -1,0 +1,40 @@
+let macro
+  form [name args . exprs]
+    quote
+      let [unquote name]
+        form [unquote args]
+          unquote
+            cons [quote begin]
+                 exprs
+
+macro fun[name args . exprs]
+  quote
+    let [unquote name]
+      function [unquote args]
+        unquote
+          cons [quote begin]
+               exprs
+macro uq[x]
+  quote
+    cons [quote unquote]
+         cons quote:[unquote x]
+              nil
+
+fun atom[x]
+  cons x
+       nil
+
+fun f-uq[x]
+  cons [quote unquote]
+       atom x
+
+if
+  !=
+    cons [quote unquote]
+         atom quote:[+ 2 3]
+    f-uq quote:[+ 2 3]
+    uq [+ 2 3]
+  abort "fail"
+  nil
+
+print "unquote.guira: OK"

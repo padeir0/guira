@@ -3,7 +3,7 @@ from parser import parse
 from lexer import lex
 from core import List, Symbol, ListBuilder
 from evaluator import eval_each, eval, Call_Node, Context, Scope
-from intrinsics import core_symbols
+from guiracore import core_symbols
 import scopekind
 import os
 import sys

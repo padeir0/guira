@@ -10,53 +10,20 @@ class Intrinsic_Function:
     def __init__(self, name, wrapper):
         self.name = name
         self.wrapper = wrapper
-    def call(self, ctx, args):
-        return self.wrapper(ctx, args)
     def __str__(self):
         return "#intrinsic-function:" + self.name
+    def _strlist(self):
+        return self.__str__()
 
 class Function:
     def __init__(self, formal_args, body, parent_scope):
         self.body = body
         self.formal_args = formal_args
         self.parent_scope = parent_scope
-
-    def call(self, ctx, args):
-        if type(args) != List:
-            return ctx.blank_error("invalid argument")
-
-        s = Scope(self.parent_scope, scopekind.Function)
-        ctx.push_env(s)
-
-        curr_arg = args
-        curr_formal_arg = self.formal_args
-        while curr_arg != nil and curr_formal_arg != nil:
-            if type(curr_arg) is List and type(curr_formal_arg) is List:
-                name = curr_formal_arg.head.symbol
-                obj = curr_arg.head
-                ctx.add_symbol(name, obj)
-                curr_formal_arg = curr_formal_arg.tail
-                curr_arg = curr_arg.tail
-            else:
-                break
-
-        # curr_arg finished first
-        if type(curr_formal_arg) is List and type(curr_arg) != List:
-            return ctx.blank_error("not enough arguments")
-        # too many arguments
-        if curr_formal_arg == nil and curr_arg != nil:
-            return ctx.blank_error("too many arguments")
-
-        # variadic arguments
-        if type(curr_arg) is List and type(curr_formal_arg) is Symbol:
-            ctx.add_symbol(curr_formal_arg.symbol, curr_arg)
-
-        res = eval(ctx, self.body)
-        ctx.pop_env()
-        return res
-
     def __str__(self):
         return "#function"
+    def _strlist(self):
+        return self.__str__()
 
 # Forms are first class. There are intrinsic forms:
 #     if  let  function  begin  quote  unquote  form
@@ -64,53 +31,20 @@ class Intrinsic_Form:
     def __init__(self, name, wrapper):
         self.name = name
         self.wrapper = wrapper
-    def call(self, ctx, args):
-        return self.wrapper(ctx, args)
     def __str__(self):
         return "#intrinsic-form:" + self.name
+    def _strlist(self):
+        return self.__str__()
 
 class Form:
     def __init__(self, formal_args, body, parent_scope):
         self.body = body
         self.formal_args = formal_args
         self.parent_scope = parent_scope
-
-    def call(self, ctx, args):
-        if type(args) != List:
-            return ctx.blank_error("invalid argument")
-
-        s = Scope(self.parent_scope, scopekind.Function)
-        ctx.push_env(s)
-
-        curr_arg = args
-        curr_formal_arg = self.formal_args
-        while curr_arg != nil and curr_formal_arg != nil:
-            if type(curr_arg) is List and type(curr_formal_arg) is List:
-                name = curr_formal_arg.head.symbol
-                obj = curr_arg.head
-                ctx.add_symbol(name, obj)
-                curr_formal_arg = curr_formal_arg.tail
-                curr_arg = curr_arg.tail
-            else:
-                break
-
-        # curr_arg finished first
-        if type(curr_formal_arg) is List and type(curr_arg) != List:
-            return ctx.blank_error("not enough arguments")
-        # too many arguments
-        if curr_formal_arg == nil and curr_arg != nil:
-            return ctx.blank_error("too many arguments")
-
-        # variadic arguments
-        if type(curr_arg) is List and type(curr_formal_arg) is Symbol:
-            ctx.add_symbol(curr_formal_arg.symbol, curr_arg)
-
-        res = eval(ctx, self.body)
-        ctx.pop_env()
-        return res
-
     def __str__(self):
         return "#form"
+    def _strlist(self):
+        return self.__str__()
 
 class Scope:
     def __init__(self, parent, kind):
@@ -251,36 +185,89 @@ def improve(res, expr):
             res.error.range = expr.range
     return res
 
+def get_scopekind(f):
+    if type(f) is Function:
+        return scopekind.Function
+    if type(f) is Form:
+        return scopekind.Form
+    raise Exception("invalid kind")
+
+def apply_user(ctx, f, args):
+    if type(args) != List:
+        return ctx.blank_error("invalid argument")
+
+    s = Scope(f.parent_scope, get_scopekind(f))
+    ctx.push_env(s)
+
+    curr_arg = args
+    curr_formal_arg = f.formal_args
+    while curr_arg != nil and curr_formal_arg != nil:
+        if type(curr_arg) is List and type(curr_formal_arg) is List:
+            name = curr_formal_arg.head.symbol
+            obj = curr_arg.head
+            ctx.add_symbol(name, obj)
+            curr_formal_arg = curr_formal_arg.tail
+            curr_arg = curr_arg.tail
+        else:
+            break
+
+    # curr_arg finished first
+    if type(curr_formal_arg) is List and type(curr_arg) != List:
+        return ctx.blank_error("not enough arguments")
+    # too many arguments
+    if curr_formal_arg == nil and curr_arg != nil:
+        return ctx.blank_error("too many arguments")
+
+    # variadic arguments
+    if type(curr_arg) is List and type(curr_formal_arg) is Symbol:
+        ctx.add_symbol(curr_formal_arg.symbol, curr_arg)
+
+    res = eval(ctx, f.body)
+    ctx.pop_env()
+    return res
+
+def apply_intrinsic(ctx, f, args):
+    return f.wrapper(ctx, args)
+
+def apply(ctx, f, args):
+    if type(args) != List:
+        err = ctx.error("expected list of arguments", None)
+        return Result(None, err)
+    if type(f) in [Intrinsic_Form, Intrinsic_Function]:
+        return apply_intrinsic(ctx, f, args)
+    elif type(f) in [Form, Function]:
+        return apply_user(ctx, f, args)
+    else:
+        err = ctx.error("symbol is not callable", None)
+        return Result(None, err)
+
 def eval(ctx, expr):
     if type(expr) is List:
         res = eval(ctx, expr.head)
         if res.failed():
             return improve(res, expr)
         head = res.value
+        if not (type(head) in [Function, Intrinsic_Function, Form, Intrinsic_Form]):
+            print("pyeval:", expr)
+            msg = "symbol is not callable: "+head.__str__()
+            err = ctx.error(msg, expr.head.range)
+            return Result(None, err)
 
-        if type(head) is Form:
-            res = head.call(ctx, expr.tail)
-            if res.failed():
-                return improve(res, expr)
-            return eval(ctx, res.value)
-        if type(head) is Intrinsic_Form:
-            res = head.call(ctx, expr.tail)
-            return improve(res, expr)
-        elif type(head) in [Function, Intrinsic_Function]:
+        args = expr.tail
+        # TODO: FEAT: allow unquote (,) to evaluate expressions in Forms
+        if type(head) in [Function, Intrinsic_Function]:
             res = eval_each(ctx, expr.tail)
             if res.failed():
                 return improve(res, expr)
             args = res.value
-            res = head.call(ctx, args)
-            return improve(res, expr)
-        else:
-            if expr.tail == nil:
-                return Result(head, None)
 
-            print("pyeval:", expr)
-            msg = "symbol is not callable: "+head.__str__()
-            err = ctx.error(msg, head.range)
-            return Result(None, err)
+        res = apply(ctx, head, args)
+        if res.failed():
+            return improve(res, expr)
+
+        if type(head) is Form:
+            return eval(ctx, res.value)
+        return res
     elif type(expr) is Symbol:
         res = ctx.retrieve(expr.symbol)
         if res.failed():
