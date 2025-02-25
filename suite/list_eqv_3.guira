@@ -1,0 +1,11 @@
+let e_1
+  quote a:b:c:d:e:f
+
+let e_2
+  quote [a [b [c [d [e f]]]]]
+
+if [!= e_1 e_2]
+   abort "fail 1" e_1 e_2
+   nil
+
+print "list_eqv_3.guira: OK"

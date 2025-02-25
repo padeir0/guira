@@ -22,4 +22,4 @@ if [!= e_3 e_1]
   abort "fail e_3 e_1"
   nil
 
-print "more_list_eqv.guira: OK"
+print "list_eqv_2.guira: OK"

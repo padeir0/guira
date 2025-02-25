@@ -58,7 +58,6 @@ class _Parser:
     # implements:
     #     {Production}
     def repeat(self, production):
-        # TODO: REFACTOR: use ListBuilder instead of python lists
         list = []
         res = production(self)
         if res.failed() or res.value == None:
@@ -218,7 +217,6 @@ def _pairs(parser):
 
     return Result(builder.list(), None)
 
-# TODO: BUG: `a:b:c` should be parsed as `[a [b c]]`
 # Pair = Term {':' Term}.
 def _pair(parser):
     parser.track("_pair")
@@ -232,7 +230,7 @@ def _pair(parser):
         return res
     if res.value != None:
         leaves = [first] + res.value
-        list = _pylist_to_list(leaves)
+        list = _pylist_to_nested_list(leaves)
         return Result(list, None)
     return Result(first, None)
 
@@ -381,13 +379,29 @@ def _discard_nl(parser):
         parser.consume()
 
 def _pylist_to_list(pylist):
-    root = nil
-    last = nil
-    for item in pylist:
-        if root == nil:
-            root = List(item, nil)
-            last = root
-        else:
-            last.tail = List(item, nil)
-            last = last.tail
+    if len(pylist) == 0:
+        return nil
+
+    root = List(pylist[0], nil)
+    last = root
+    for item in pylist[1:]:
+        last.tail = List(item, nil)
+        last = last.tail
+    return root
+
+def _pylist_to_nested_list(pylist):
+    if len(pylist) == 0:
+        return nil
+
+    root = List(pylist[0], nil)
+    if len(pylist) == 1:
+        return root
+
+    last = root
+    for item in pylist[1:-1]:
+        a = List(item, nil)
+        last.tail = List(a, nil)
+        last = a
+
+    last.tail = List(pylist[-1], nil)
     return root

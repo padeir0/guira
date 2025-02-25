@@ -73,4 +73,4 @@ if [!= e_8 e_1]
   abort "fail e_8 e_1"
   nil
 
-print "list_equivalences.guira: OK"
+print "list_eqv_1.guira: OK"

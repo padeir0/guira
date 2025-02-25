@@ -28,10 +28,10 @@ def core_symbols(scope):
     add_function(scope, "form?",     pred_form_wrapper)
     add_function(scope, "nil?",      pred_nil_wrapper)
 
-    add_function(scope, "exact?",   pred_exact_wrapper)
-    add_function(scope, "inexact?", pred_inexact_wrapper)
-    # TODO: FEAT: proper?          list -> bool
-    # TODO: FEAT: improper?        list -> bool
+    add_function(scope, "exact?",    pred_exact_wrapper)
+    add_function(scope, "inexact?",  pred_inexact_wrapper)
+    add_function(scope, "proper?",   pred_proper_wrapper)
+    add_function(scope, "improper?", pred_improper_wrapper)
 
     add_function(scope, "to-string",  to_string_wrapper)
     add_function(scope, "to-symbol",  to_symbol_wrapper)
@@ -72,9 +72,9 @@ def core_symbols(scope):
     add_function(scope, "-", minus_wrapper)
     add_function(scope, "*", mult_wrapper)
     add_function(scope, "/", div_wrapper)
-    # TODO: FEAT: add_function(scope, "remainder", remainder_wrapper)
-    # TODO: FEAT: add_function(scope, "even?", even_wrapper)
-    # TODO: FEAT: add_function(scope, "odd?", odd_wrapper)
+    add_function(scope, "remainder", remainder_wrapper)
+    add_function(scope, "even?",     even_wrapper)
+    add_function(scope, "odd?",      odd_wrapper)
 
     add_function(scope, "cons", cons_wrapper)
     add_function(scope, "head", head_wrapper)
@@ -92,8 +92,8 @@ def core_symbols(scope):
     # LIST FUNCTIONS
     # (length, start = 0,step = 1)
     # TODO: FEAT: range       num [num [num]] -> list
-    # TODO: FEAT: unique      list -> list
-    # TODO: FEAT: sort        list -> list
+    # TODO: FEAT: unique      list [function] -> list
+    # TODO: FEAT: sort        list [function] -> list
 
     add_function(scope, "eval",  eval_wrapper)
     add_function(scope, "apply",  apply_wrapper)
@@ -288,6 +288,26 @@ def pred_inexact_wrapper(ctx, list):
     if type(arg) is Number and type(arg.number) is Decimal:
         return Result(true, None)
     return Result(false, None)
+
+def pred_proper_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+    arg = list.head
+    if type(arg) != List:
+        err = ctx.error("argument is not a list", list.range)
+        return Result(None, err)
+    out = false
+    if type(arg.last()) is List:
+        out = true
+    return Result(out, None)
+
+def pred_improper_wrapper(ctx, list):
+    res = pred_proper_wrapper(ctx, list)
+    if res.failed():
+        return res
+    out = _not(res.value)
+    return Result(out, None)
 
 ### CONVERSION FUNCTIONS
 def to_string_wrapper(ctx, list):
@@ -491,6 +511,42 @@ def div_wrapper(ctx, list):
             return Result(None, err)
         out.div(curr.head, ctx.precision)
         curr = curr.tail
+    return Result(out, None)
+
+def remainder_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 2)
+    if res.failed():
+        return res
+    a = list.head
+    b = list.tail.head
+    if type(a) != Number or type(a.number) != int:
+        err = ctx.error("expected integer", list.head.range)
+        return Result(None, err)
+    if type(b) != Number or type(b.number) != int:
+        err = ctx.error("expected integer", list.tail.range)
+        return Result(None, err)
+
+    out = Number(a.number % b.number)
+    return Result(out, None)
+
+def even_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+    head = list.head
+    if type(head) != Number or type(head.number) != int:
+        err = ctx.error("expected integer", list.range)
+        return Result(None, err)
+    out = false
+    if head.number % 2 == 0:
+        out = true
+    return Result(out, None)
+
+def odd_wrapper(ctx, list):
+    res = even_wrapper(ctx, list)
+    if res.failed():
+        return res
+    out = _not(res.value)
     return Result(out, None)
 
 ### LOGICAL FORMS

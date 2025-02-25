@@ -139,6 +139,7 @@ def get_guira_file_names(directory_path):
             if file.endswith(".guira"):
                 file_path = os.path.join(root, file)
                 file_names += [file_path]
+    file_names.sort()
     return file_names
 
 def test_whole_dir(folder_path):
