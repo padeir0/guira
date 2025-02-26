@@ -55,7 +55,7 @@ if [!= [/ 1 ~2] ~1/2]
   nil
 
 if [!= [/ 0 2] 0]
-  abort "fail 15"
+  abort "fail 15" [/ 0 2] 0
   nil
 
 print "arith.guira: OK"

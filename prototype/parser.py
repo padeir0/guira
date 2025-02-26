@@ -1,6 +1,6 @@
 import lexkind
 from lexer import Lexer
-from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, ListBuilder
+from core import *
 from fractions import Fraction
 from util import convert_number
 
@@ -212,7 +212,7 @@ def _pairs(parser):
         return res
     pylist = res.value
     if res.value != None and len(res.value) > 0:
-        list = _pylist_to_list(res.value)
+        list = pylist_to_list(res.value)
         builder.append_list(list)
 
     return Result(builder.list(), None)
@@ -230,7 +230,7 @@ def _pair(parser):
         return res
     if res.value != None:
         leaves = [first] + res.value
-        list = _pylist_to_nested_list(leaves)
+        list = pylist_to_nested_list(leaves)
         return Result(list, None)
     return Result(first, None)
 
@@ -297,7 +297,7 @@ def _ml_pairs(parser):
     _discard_nl(parser)
 
     if pylist != None:
-        list = _pylist_to_list(res.value)
+        list = pylist_to_list(res.value)
         builder.append_list(list)
 
     res = _end(parser)
@@ -322,7 +322,7 @@ def _ml_pair(parser):
         return res
     if res.value != None:
         leaves = [first] + res.value
-        list = _pylist_to_list(leaves)
+        list = pylist_to_list(leaves)
         return Result(list, None)
     return Result(first, None)
 
@@ -377,31 +377,3 @@ def _NL(parser):
 def _discard_nl(parser):
     while parser.word_is(lexkind.NL):
         parser.consume()
-
-def _pylist_to_list(pylist):
-    if len(pylist) == 0:
-        return nil
-
-    root = List(pylist[0], nil)
-    last = root
-    for item in pylist[1:]:
-        last.tail = List(item, nil)
-        last = last.tail
-    return root
-
-def _pylist_to_nested_list(pylist):
-    if len(pylist) == 0:
-        return nil
-
-    root = List(pylist[0], nil)
-    if len(pylist) == 1:
-        return root
-
-    last = root
-    for item in pylist[1:-1]:
-        a = List(item, nil)
-        last.tail = List(a, nil)
-        last = a
-
-    last.tail = List(pylist[-1], nil)
-    return root

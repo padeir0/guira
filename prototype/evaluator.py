@@ -1,50 +1,5 @@
-from core import Error, Result, List, Number, Symbol, String, ListBuilder, Nil, nil
+from core import *
 import scopekind
-
-# A Guira object can be of the types:
-#    Form, Intrinsic_Form,
-#    Function, Intrinsic_Function,
-#    Number, String, List,
-#    Nil.
-class Intrinsic_Function:
-    def __init__(self, name, wrapper):
-        self.name = name
-        self.wrapper = wrapper
-    def __str__(self):
-        return "#intrinsic-function:" + self.name
-    def _strlist(self):
-        return self.__str__()
-
-class Function:
-    def __init__(self, formal_args, body, parent_scope):
-        self.body = body
-        self.formal_args = formal_args
-        self.parent_scope = parent_scope
-    def __str__(self):
-        return "#function"
-    def _strlist(self):
-        return self.__str__()
-
-# Forms are first class. There are intrinsic forms:
-#     if  let  function  begin  quote  unquote  form
-class Intrinsic_Form:
-    def __init__(self, name, wrapper):
-        self.name = name
-        self.wrapper = wrapper
-    def __str__(self):
-        return "#intrinsic-form:" + self.name
-    def _strlist(self):
-        return self.__str__()
-
-class Form:
-    def __init__(self, formal_args, body, parent_scope):
-        self.body = body
-        self.formal_args = formal_args
-        self.parent_scope = parent_scope
-    def __str__(self):
-        return "#form"
-    def _strlist(self):
-        return self.__str__()
 
 class Scope:
     def __init__(self, parent, kind):
@@ -162,18 +117,22 @@ def eval_each(ctx, list):
         curr = list
         builder = ListBuilder()
         while curr != nil:
+            rng = None
             if type(curr) is List:
                 res = eval(ctx, curr.head)
                 if res.failed():
                     return res
-                builder.append_item(res.value)
+                rng = curr.range
                 curr = curr.tail
             else:
                 res = eval(ctx, curr)
                 if res.failed():
                     return res
-                builder.append_item(res.value)
                 curr = nil
+            # we try to keep range information
+            l = List(res.value, nil)
+            l.range = rng
+            builder.append_list(l)
         list = builder.list()
         return Result(list, None)
     else:

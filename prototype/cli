@@ -1,7 +1,7 @@
 #!/bin/python
 from parser import parse
 from lexer import lex
-from core import List, Symbol, ListBuilder
+from core import *
 from evaluator import eval_each, eval, Call_Node, Context, Scope
 from guiracore import core_symbols
 import scopekind

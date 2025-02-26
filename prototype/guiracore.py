@@ -1,4 +1,4 @@
-from core import Result, Error, Range, List, Symbol, Number, String, Nil, nil, true, false, ListBuilder, to_dec, to_frac
+from core import *
 from evaluator import eval, apply, Scope, Intrinsic_Function, Function, Form, Intrinsic_Form
 from util import is_valid_identifier, is_valid_number, convert_number, string_to_list
 from fractions import Fraction
@@ -76,24 +76,24 @@ def core_symbols(scope):
     add_function(scope, "even?",     even_wrapper)
     add_function(scope, "odd?",      odd_wrapper)
 
-    add_function(scope, "cons", cons_wrapper)
-    add_function(scope, "head", head_wrapper)
-    add_function(scope, "tail", tail_wrapper)
-    add_function(scope, "list", list_wrapper)
-    add_function(scope, "length", length_wrapper)
-    add_function(scope, "last", last_wrapper)
-    add_function(scope, "append", append_wrapper)
+    add_function(scope, "cons",    cons_wrapper)
+    add_function(scope, "head",    head_wrapper)
+    add_function(scope, "tail",    tail_wrapper)
+    add_function(scope, "list",    list_wrapper)
+    add_function(scope, "length",  length_wrapper)
+    add_function(scope, "last",    last_wrapper)
+    add_function(scope, "append",  append_wrapper)
     add_function(scope, "reverse", reverse_wrapper)
-    add_function(scope, "for", for_wrapper)
-    add_function(scope, "map", map_wrapper)
-    add_function(scope, "filter", filter_wrapper)
-    add_function(scope, "fold", fold_wrapper)
+    add_function(scope, "for",     for_wrapper)
+    add_function(scope, "map",     map_wrapper)
+    add_function(scope, "filter",  filter_wrapper)
+    add_function(scope, "fold",    fold_wrapper)
+    add_function(scope, "unique",  unique_wrapper)
+    add_function(scope, "sort",    sort_wrapper)
 
     # LIST FUNCTIONS
     # (length, start = 0,step = 1)
     # TODO: FEAT: range       num [num [num]] -> list
-    # TODO: FEAT: unique      list [function] -> list
-    # TODO: FEAT: sort        list [function] -> list
 
     add_function(scope, "eval",  eval_wrapper)
     add_function(scope, "apply",  apply_wrapper)
@@ -136,44 +136,6 @@ def _not(obj):
     else:
         out = false
     return out
-
-def eq_list(a, b):
-    curr_a = a
-    curr_b = b
-    while curr_a != nil and curr_b != nil:
-        if type(curr_a) != type(curr_b):
-            return False
-        if type(curr_a) is List:
-            if not equals(curr_a.head, curr_b.head):
-                return False
-            curr_a = curr_a.tail
-            curr_b = curr_b.tail
-        else:
-            if not equals(curr_a, curr_b):
-                return False
-            curr_a = nil
-            curr_b = nil
-    if curr_a != nil or curr_b != nil:
-        return False
-    return True
-
-def equals(a, b):
-    if not(type(a) is type(b)):
-        return False
-    if a == nil and b == nil:
-        return True
-    if type(a) is List:
-        return eq_list(a, b)
-    if type(a) is Number:
-        return a.number == b.number
-    if type(a) is String:
-        return a.string == b.string
-    if type(a) is Symbol:
-        return a.symbol == b.symbol
-    if type(a) in [Intrinsic_Function, Function, Form, Intrinsic_Form]:
-        # we can't expose the implementation
-        return False
-    return False
 
 def format_args(args):
     if type(args) == Symbol:
@@ -609,7 +571,7 @@ def eq_wrapper(ctx, list):
     curr = list
     obj = curr.head
     while curr != nil:
-        if not equals(obj, curr.head):
+        if not obj == curr.head:
             return Result(false, None)
         curr = curr.tail
 
@@ -628,25 +590,17 @@ def less_wrapper(ctx, list):
         return res
 
     curr = list
-    if type(curr.head) != Number:
-        err = ctx.error("expected number", curr.head.range)
-        return Result(None, err)
-
-    obj = curr.head.number
+    obj = curr.head
     curr = curr.tail
     while curr != nil:
         if type(curr) != List:
             err = ctx.error("invalid argument format", list.range)
             return Result(None, err)
         
-        if type(curr.head) != Number:
-            err = ctx.error("expected number", curr.head.range)
-            return Result(None, err)
-
-        if obj >= curr.head.number:
+        if not obj < curr.head:
             return Result(false, None)
 
-        obj = curr.head.number
+        obj = curr.head
         curr = curr.tail
 
     return Result(true, None)
@@ -657,25 +611,17 @@ def less_eq_wrapper(ctx, list):
         return res
 
     curr = list
-    if type(curr.head) != Number:
-        err = ctx.error("expected number", curr.head.range)
-        return Result(None, err)
-
-    obj = curr.head.number
+    obj = curr.head
     curr = curr.tail
     while curr != nil:
         if type(curr) != List:
             err = ctx.error("invalid argument format", list.range)
             return Result(None, err)
-        
-        if type(curr.head) != Number:
-            err = ctx.error("expected number", curr.head.range)
-            return Result(None, err)
 
-        if obj > curr.head.number:
+        if not obj <= curr.head:
             return Result(false, None)
 
-        obj = curr.head.number
+        obj = curr.head
         curr = curr.tail
 
     return Result(true, None)
@@ -740,6 +686,7 @@ def last_wrapper(ctx, list):
     if res.failed():
         return res
     if type(list.head) != List:
+        print(list.head)
         err = ctx.error("expected list", list.range)
         return Result(None, err)
     curr = list.head
@@ -1005,8 +952,82 @@ def for_wrapper(ctx, list):
                 curr = nil
         return Result(nil, None)
 
+# TODO: FEAT: range       num [num [num]] -> list
 def range_wrapper(ctx, list):
     pass
+
+def unique_wrapper(ctx, ls):
+    res = check_num_args_between(ctx, ls, 1, 2)
+    if res.failed():
+        return res
+
+    arg0 = ls.head
+    if type(arg0) != List:
+        err = ctx.error("expected list", ls.range)
+        return Result(None, err)
+
+    if ls.tail == nil:
+        out = pylist_to_list(list(set(list_to_pylist(arg0))))
+        return Result(out, None)
+    else:
+        f = ls.tail.head
+        if not (type(f) in [Function, Intrinsic_Function]):
+            err = ctx.error("expected function", ls.tail)
+            return Result(None, err)
+
+        m = {}
+        curr = arg0
+        while curr != nil:
+            if type(curr) is List:
+                obj = curr.head
+                curr = curr.tail
+            else:
+                obj = curr
+                curr = nil
+            res = apply(ctx, f, List(obj, nil))
+            if res.failed():
+                return res
+            m[res.value] = obj
+        out = pylist_to_list(list(m.values()))
+        return Result(out, None)
+
+# we need to define < > <= and >= operators for all types
+# including lists.
+# The function is a less-or-equals-than operator, it implements '<'.
+def sort_wrapper(ctx, ls):
+    res = check_num_args_between(ctx, ls, 1, 2)
+    if res.failed():
+        return res
+
+    arg0 = ls.head
+    if type(arg0) != List:
+        err = ctx.error("expected list", ls.range)
+        return Result(None, err)
+
+    if ls.tail == nil:
+        out = pylist_to_list(sorted(list_to_pylist(arg0)))
+        return Result(out, None)
+    else:
+        f = ls.tail.head
+        if not (type(f) in [Function, Intrinsic_Function]):
+            err = ctx.error("expected function", ls.tail)
+            return Result(None, err)
+        # may god forgive me for this sin
+        class M:
+            def __init__(self, obj):
+                self.obj = obj
+            def __lt__(self, other):
+                args = List(self.obj, List(other.obj, nil))
+                args.range = ls.tail.range
+                res = apply(ctx, f, args)
+                if res.failed():
+                    raise res.error
+                return res.value != false
+        try:
+            out = pylist_to_list(sorted(list_to_pylist(arg0), key=M))
+        except Error as err:
+            return Result(None, err)
+        return Result(out, None)
 
 ### SIDE-EFFECTS
 

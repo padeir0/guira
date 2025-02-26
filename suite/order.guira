@@ -1,0 +1,38 @@
+if
+  <
+    nil
+    quote [a]
+    quote [a b]
+    quote [a b c]
+    quote [a b c d]
+  nil
+  abort "fail 1"
+if
+  < "a"
+    "a b"
+    "a b c"
+    "a b c d"
+  nil
+  abort "fail 2"
+if
+  <
+    quote 1
+    quote a
+    quote "a"
+    quote [a b]
+  nil
+  abort "fail 3"
+
+let id
+  form x x
+let sq
+  function x [* x x]
+if
+  < if
+    fold
+    id
+    sq
+  nil
+  abort "fail 4"
+
+print "order.guira: OK"

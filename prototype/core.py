@@ -61,11 +61,12 @@ class Range:
         self.start.correct_editor_view()
         self.end.correct_editor_view()
 
-class Error:
+class Error(Exception):
     def __init__(self, module, string, range):
         self.module = module
         self.message = string
         self.range = range
+        super().__init__(string)
     def __str__(self):
         if self.range != None:
             out = "error " + self.module
@@ -113,6 +114,16 @@ def _indent(n):
         i += 1
     return out
 
+def combine_hash(a, b):
+    a = a ^ b * 0x5bd1e995
+    a = a ^ (a >> 15)
+    return a
+
+# A Guira object can be of the types:
+#    Form, Intrinsic_Form,
+#    Function, Intrinsic_Function,
+#    Number, String, List,
+#    Nil.
 class Nil:
     def __init__(self):
         pass
@@ -121,6 +132,14 @@ class Nil:
         return "nil"
     def _strlist(self):
         return "nil"
+    def __hash__(self):
+        return 1
+    def __eq__(self, other):
+        return type(other) is Nil
+    def __lt__(self, other):
+        return True
+    def __le__(self, other):
+        return self == other or self < other
 
 nil = Nil()
 
@@ -196,6 +215,73 @@ class List:
                 curr = nil
         return i
 
+    def __eq__(self, other):
+        if type(other) != List:
+            return False
+
+        curr_self = self
+        curr_other = other
+        while curr_self != nil and curr_other != nil:
+            if type(curr_self) != type(curr_other):
+                return False
+            if type(curr_self) is List:
+                if curr_self.head != curr_other.head:
+                    return False
+                curr_self = curr_self.tail
+                curr_other = curr_other.tail
+            else:
+                if curr_self != curr_other:
+                    return False
+                curr_self = nil
+                curr_other = nil
+        if curr_self != nil or curr_other != nil:
+            return False
+        return True
+
+    def __hash__(self):
+        out = 0xCAFE
+        curr = self
+        while curr != nil:
+            if type(curr) is List:
+                out = combine_hash(out, curr.head.__hash__())
+                curr = curr.tail
+            else:
+                out = combine_hash(out, curr.__hash__())
+                curr = nil
+        return out
+
+    def __lt__(self, other):
+        if type(other) != List:
+            return type_less_than(self, other)
+
+        curr_self = self
+        curr_other = other
+        while curr_self != nil and curr_other != nil:
+            if type(curr_self) != type(curr_other):
+                return type_less_than(self, other)
+            if type(curr_self) is List:
+                if curr_self.head < curr_other.head:
+                    return True
+                if curr_self.head != curr_other.head:
+                    return False
+                curr_self = curr_self.tail
+                curr_other = curr_other.tail
+            else:
+                if curr_self.head < curr_other.head:
+                    return True
+                if curr_self != curr_other:
+                    return False
+                curr_self = nil
+                curr_other = nil
+
+        if curr_self == nil and curr_other != nil:
+            # in this case, self.length() < other.length()
+            return True
+        return False
+
+    def __le__(self, other):
+        return self == other or self < other
+
 # identifiers
 class Symbol:
     def __init__(self, symbol):
@@ -209,6 +295,18 @@ class Symbol:
         return self.range.start.column
     def compute_ranges(self):
         return self.range
+    def __hash__(self):
+        return self.symbol.__hash__()
+    def __eq__(self, other):
+        if type(other) != Symbol:
+            return False
+        return self.symbol.__eq__(other.symbol)
+    def __lt__(self, other):
+        if type(other) != Symbol:
+            return type_less_than(self, other)
+        return self.symbol < other.symbol
+    def __le__(self, other):
+        return self == other or self < other
 
 # implements a numerical tower
 # the tower will be:
@@ -242,6 +340,18 @@ class Number:
         a, b = _retype(self, other, prec)
         self.number = a / b
         return self
+    def __hash__(self):
+        return self.number.__hash__()
+    def __eq__(self, other):
+        if type(other) != Number:
+            return False
+        return self.number == other.number
+    def __lt__(self, other):
+        if type(other) != Number:
+            return type_less_than(self, other)
+        return self.number < other.number
+    def __le__(self, other):
+        return self == other or self < other
 
 def _retype(self, other, prec):
     if type(self.number) is Decimal or type(other.number) is Decimal:
@@ -280,6 +390,154 @@ class String:
         return self.range.start.column
     def compute_ranges(self):
         return self.range
+    def __hash__(self):
+        return self.string.__hash__()
+    def __eq__(self, other):
+        if type(other) != String:
+            return False
+        return self.string == other.string
+    def __lt__(self, other):
+        if type(other) != String:
+            return type_less_than(self, other)
+        return self.string < other.string
+    def __le__(self, other):
+        return self == other or self < other
+
+class Intrinsic_Function:
+    def __init__(self, name, wrapper):
+        self.name = name
+        self.wrapper = wrapper
+    def __str__(self):
+        return "#intrinsic-function:" + self.name
+    def _strlist(self):
+        return self.__str__()
+    def __hash__(self):
+        return id(self)
+    def __eq__(self, other):
+        return id(self) == id(other)
+    def __lt__(self, other):
+        if type(other) != Intrinsic_Function:
+            return type_less_than(self, other)
+        return id(self) < id(other)
+    def __le__(self, other):
+        return self == other or self < other
+
+class Function:
+    def __init__(self, formal_args, body, parent_scope):
+        self.body = body
+        self.formal_args = formal_args
+        self.parent_scope = parent_scope
+    def __str__(self):
+        return "#function"
+    def _strlist(self):
+        return self.__str__()
+    def __hash__(self):
+        return id(self)
+    def __eq__(self, other):
+        return id(self) == id(other)
+    def __lt__(self, other):
+        if type(other) != Function:
+            return type_less_than(self, other)
+        return id(self) < id(other)
+    def __le__(self, other):
+        return self == other or self < other
+
+# Forms are first class. There are intrinsic forms:
+#     if  let  function  begin  quote  unquote  form
+class Intrinsic_Form:
+    def __init__(self, name, wrapper):
+        self.name = name
+        self.wrapper = wrapper
+    def __str__(self):
+        return "#intrinsic-form:" + self.name
+    def _strlist(self):
+        return self.__str__()
+    def __hash__(self):
+        return id(self)
+    def __eq__(self, other):
+        return id(self) == id(other)
+    def __lt__(self, other):
+        if type(other) != Intrinsic_Form:
+            return type_less_than(self, other)
+        return id(self) < id(other)
+    def __le__(self, other):
+        return self == other or self < other
+
+class Form:
+    def __init__(self, formal_args, body, parent_scope):
+        self.body = body
+        self.formal_args = formal_args
+        self.parent_scope = parent_scope
+    def __str__(self):
+        return "#form"
+    def _strlist(self):
+        return self.__str__()
+    def __hash__(self):
+        return id(self)
+    def __eq__(self, other):
+        return id(self) == id(other)
+    def __lt__(self, other):
+        if type(other) != Form:
+            return type_less_than(self, other)
+        return id(self) < id(other)
+    def __le__(self, other):
+        return self == other or self < other
+
+def type_less_than(a, b):
+    ta = type(a)
+    tb = type(b)
+    m = {
+        Nil:    0,
+        Number: 1,
+        Symbol: 2,
+        String: 3,
+        List:   4,
+        Intrinsic_Form: 5,
+        Intrinsic_Function: 6,
+        Form: 7,
+        Function: 8,
+    }
+    return m[ta] < m[tb]
+
+def pylist_to_list(pylist):
+    if len(pylist) == 0:
+        return nil
+
+    root = List(pylist[0], nil)
+    last = root
+    for item in pylist[1:]:
+        last.tail = List(item, nil)
+        last = last.tail
+    return root
+
+def list_to_pylist(list):
+    out = []
+    curr = list
+    while curr != nil:
+        if type(curr) is List:
+            out += [curr.head]
+            curr = curr.tail
+        else:
+            out += [curr]
+            curr = nil
+    return out
+
+def pylist_to_nested_list(pylist):
+    if len(pylist) == 0:
+        return nil
+
+    root = List(pylist[0], nil)
+    if len(pylist) == 1:
+        return root
+
+    last = root
+    for item in pylist[1:-1]:
+        a = List(item, nil)
+        last.tail = List(a, nil)
+        last = a
+
+    last.tail = List(pylist[-1], nil)
+    return root
 
 class ListBuilder:
     def __init__(self):

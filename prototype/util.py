@@ -1,7 +1,7 @@
 import lexer
 import lexkind
 import parser
-from core import Number
+from core import *
 from fractions import Fraction
 from decimal import Decimal
 

@@ -1,5 +1,5 @@
 import lexkind
-from core import Position, Range, Lexeme, Error
+from core import *
 
 def _is_ident_begin(s):
     return _is_letter(s) or _is_special(s)
