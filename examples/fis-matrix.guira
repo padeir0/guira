@@ -1,9 +1,6 @@
-# This program ranks the courses in Physics
-# lectured at UFF by order of least importance.
-# Importance of a course A is defined
-# to be the number of other courses depending on A.
-# A course that has high importance has a high
-# chance to delay graduation.
+# This program ranks Physics courses at UFF by least importance.
+# The importance of a course A is the number of other courses that depend on A.
+# A course with high importance is more likely to delay graduation.
 
 # Currently this program takes 2.6 seconds to run to completion
 # on my machine. This may serve as a benchmark.
