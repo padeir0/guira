@@ -122,7 +122,7 @@ def combine_hash(a, b):
 # A Guira object can be of the types:
 #    Form, Intrinsic_Form,
 #    Function, Intrinsic_Function,
-#    Number, String, List,
+#    Number, String, Symbol, List,
 #    Nil.
 class Nil:
     def __init__(self):

@@ -117,9 +117,13 @@ fun deps[ls . symbols]
                   cons ls [c-ls-find-deps ls symbols]
 
 fun all-deps[ls]
+  fun clean-deps[x]
+      let a
+        deps ls c-id:x
+      cons head:a
+           sort:unique:tail:a
   map
-    function x
-      deps ls c-id:x
+    clean-deps
     ls
 
 for

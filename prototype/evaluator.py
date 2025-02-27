@@ -7,18 +7,14 @@ class Scope:
         self.parent = parent
         self.name = ""
         self.dict = {}
+    # TODO: IMPROV: allow "add_symbol" to attach documentation in a separate dictionary
     def add_symbol(self, name, obj):
         self.dict[name] = obj
-    def set_symbol(self, name, obj):
-        if name in self.dict:
-            self.dict[name] = obj
-            return True
-        else:
-            return False
     def set_scope_name(self, name):
         self.name = name
     def contains(self, name):
         return name in self.dict
+    # TODO: IMPROV: create an "retrieve_docs" procedure to find documentation
     def retrieve(self, name):
         if name in self.dict:
             return Result(self.dict[name], None)
@@ -84,9 +80,6 @@ class Context:
 
     def add_symbol(self, name, obj):
         self.curr_call_node.curr_scope.add_symbol(name, obj)
-
-    def set_symbol(self, name, obj):
-        return self.curr_call_node.curr_scope.set_symbol(name, obj)
 
     def set_mod(self, mod_name, mod):
         self.evaluated_mods[mod_name] = mod

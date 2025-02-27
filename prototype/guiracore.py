@@ -12,12 +12,15 @@ def core_symbols(scope):
 
     add_form(scope, "function", function_wrapper)
     add_form(scope, "form",     form_wrapper)
+    # TODO: IMPROV: allow 'let' to include optional documentation
     add_form(scope, "let",      let_wrapper)
     add_form(scope, "if",       if_wrapper)
     add_form(scope, "begin",    begin_wrapper)
     add_form(scope, "quote",    quote_wrapper)
-    # TODO: FEAT: 'doc' special form for documentation
+    # TODO: FEAT: 'help' special form for documentation
     # TODO: FEAT: 'import' special form to bring intrinsic modules in scope
+    add_form(scope, "or",  or_wrapper)
+    add_form(scope, "and", and_wrapper)
 
     add_function(scope, "string?",   pred_string_wrapper)
     add_function(scope, "number?",   pred_number_wrapper)
@@ -45,19 +48,16 @@ def core_symbols(scope):
     add_function(scope, "denominator", denominator_wrapper)
 
     # STRING FUNCTIONS
-    # TODO: FEAT: concat      string . string -> string
-    # TODO: FEAT: slice       string num num -> string
-    # TODO: FEAT: str-len     string -> num
+    # TODO: FEAT: concatenate    string . string -> string
+    # TODO: FEAT: slice          string num num -> string
+    # TODO: FEAT: string-length  string -> num
     # (joins each element of the list with a separator)
-    # TODO: FEAT: split       string string -> list
-    # TODO: FEAT: join        list string -> string
+    # TODO: FEAT: split          string string -> list
+    # TODO: FEAT: join           list string -> string
     # (follow go formatting rules)
     # %v %#v %T %%
     # %n %.6n %s %t %l
-    # TODO: FEAT: format      string . any -> string
-
-    add_form(scope, "or",  or_wrapper)
-    add_form(scope, "and", and_wrapper)
+    # TODO: FEAT: format         string . any -> string
 
     add_function(scope, "not",  not_wrapper)
 
@@ -76,7 +76,7 @@ def core_symbols(scope):
     add_function(scope, "even?",     even_wrapper)
     add_function(scope, "odd?",      odd_wrapper)
 
-    add_function(scope, "cons",    cons_wrapper)
+    add_function(scope, "cons",    cons_wrapper) # TODO: IMPROV: change 'cons' to 'pair'
     add_function(scope, "head",    head_wrapper)
     add_function(scope, "tail",    tail_wrapper)
     add_function(scope, "list",    list_wrapper)

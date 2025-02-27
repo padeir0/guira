@@ -11,7 +11,8 @@ defined in guira-core.
 
 ```
 function form let if  begin
-quote    or   and doc import
+quote    or   and import
+help
 ```
 
 ### Intrinsic Values
@@ -38,15 +39,16 @@ not
 = != < > <= >=
 
 + - * /
+remainder even? odd?
 
-cons   head tail   last   list length
+pair   head tail   last   list length
 append map  filter fold   for  reverse
-range  
+range  sort unique
 
-join concat format slice str-len
-split
+join concatenate format slice
+split string-length
 
-eval apply
+evaluate apply
 
 print abort
 ```
