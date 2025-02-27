@@ -1,11 +1,11 @@
 if 
-  != [cons 1 [cons 2 3]]
+  != [pair 1 [pair 2 3]]
      [quote [1 2 . 3]]
-  abort "fail 1" [quote [1 2 . 3]] [cons 1 [cons 2 3]]
+  abort "fail 1" [quote [1 2 . 3]] [pair 1 [pair 2 3]]
   nil
 
 if 
-  != [cons 1 [cons 2 3]]
+  != [pair 1 [pair 2 3]]
      quote 
            1 2 . 3
   abort "fail 2"
@@ -27,7 +27,7 @@ if [!= a b c]
   nil
 
 if 
-  != [quote [[1] 2]] [cons [cons 1 nil] [cons 2 nil]]
+  != [quote [[1] 2]] [pair [pair 1 nil] [pair 2 nil]]
   abort "fail 4" 
   nil
 
@@ -35,13 +35,13 @@ if
   != 
     quote 
       [1] 2
-    [cons [cons 1 nil] [cons 2 nil]]
+    [pair [pair 1 nil] [pair 2 nil]]
   begin
     print 
       quote 
         [1] 2
       "!="
-      [cons [cons 1 nil] [cons 2 nil]]
+      [pair [pair 1 nil] [pair 2 nil]]
     abort "fail 5" 
   nil
 

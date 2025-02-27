@@ -1,5 +1,5 @@
-let a [cons 1 2]
-let b [cons a [cons 3 4]]
+let a [pair 1 2]
+let b [pair a [pair 3 4]]
 
 if [!= a [quote [1 . 2]]]
   abort "fail 1"
@@ -9,12 +9,12 @@ if [!= b [quote [[1 . 2] 3 . 4]]]
   abort "fail 2"
   nil
 
-let c [cons 1 [cons 2 nil]]
+let c [pair 1 [pair 2 nil]]
 let d
   quote
     0 [unquote c] 3
 
-if [!= c [cons 1 [cons 2 nil]]]
+if [!= c [pair 1 [pair 2 nil]]]
   abort "fail 3"
   nil
 
@@ -22,4 +22,4 @@ if [!= d [quote [0 [1 2] 3]]]
   abort "fail 4"
   nil
 
-print "ref_cons.guira: OK"
+print "ref_pair.guira: OK"

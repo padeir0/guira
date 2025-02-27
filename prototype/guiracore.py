@@ -76,7 +76,7 @@ def core_symbols(scope):
     add_function(scope, "even?",     even_wrapper)
     add_function(scope, "odd?",      odd_wrapper)
 
-    add_function(scope, "cons",    cons_wrapper) # TODO: IMPROV: change 'cons' to 'pair'
+    add_function(scope, "pair",    pair_wrapper)
     add_function(scope, "head",    head_wrapper)
     add_function(scope, "tail",    tail_wrapper)
     add_function(scope, "list",    list_wrapper)
@@ -642,7 +642,7 @@ def greater_eq_wrapper(ctx, list):
 
 ### LIST OPERATORS
 
-def cons_wrapper(ctx, list):
+def pair_wrapper(ctx, list):
     if list == nil or list.tail == nil:
         err = ctx.error("invalid number of arguments", None)
         return Result(None, err)

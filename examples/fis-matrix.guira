@@ -11,7 +11,7 @@ let macro
       let [unquote name]
         form [unquote args]
           unquote
-            cons [quote begin]
+            pair [quote begin]
                  exprs
 
 macro fun[name args . exprs]
@@ -19,13 +19,13 @@ macro fun[name args . exprs]
     let [unquote name]
       function [unquote args]
         unquote
-          cons [quote begin]
+          pair [quote begin]
                exprs
 
 macro mq[first . others]
   quote
-    cons [quote [unquote first]]
-         quote [unquote others]
+    pair quote:unquote:first
+         quote:unquote:others
 
 let course-list
   mq
@@ -144,13 +144,13 @@ fun deps[ls . symbols]
      nil
      append symbols
             apply deps
-                  cons ls [c-ls-find-deps ls symbols]
+                  pair ls [c-ls-find-deps ls symbols]
 
 fun all-deps[ls]
   fun clean-deps[x]
       let a
         deps ls c-id:x
-      cons head:a
+      pair head:a
            sort:unique:tail:a
   map
     clean-deps

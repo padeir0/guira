@@ -24,7 +24,7 @@ if [number? 'a']
 
 ###
 
-if [list? [cons 1 2]]
+if [list? [pair 1 2]]
    nil
    abort "fail 3a"
 if [list? nil]
@@ -36,7 +36,7 @@ if [list? nil]
 if [nil? nil]
    nil
    abort "fail 4a"
-if [nil? [cons 1 2]]
+if [nil? [pair 1 2]]
    abort "fail 4b"
    nil
 if [nil? 0]
@@ -87,7 +87,7 @@ if [symbol? [quote a]]
 if [symbol? 1]
    abort "fail 7b"
    nil
-if [symbol? [cons 1 2]]
+if [symbol? [pair 1 2]]
    abort "fail 7c"
    nil
 

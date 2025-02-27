@@ -9,9 +9,9 @@ if [= b 2]
   nil
   abort 'fail 2'
 
-let c [cons a [cons b nil]]
+let c [pair a [pair b nil]]
 
-if [!= c [cons 1 [cons 2 nil]]]
+if [!= c [pair 1 [pair 2 nil]]]
   abort "fail 3"
   nil
 
