@@ -60,10 +60,6 @@ class Context:
 
         return ""
 
-    def blank_error(self, message):
-        modname = self.find_module_name()
-        return Error(modname, message, None)
-
     def error(self, message, range):
         modname = self.find_module_name()
         if range != None:
@@ -153,7 +149,8 @@ def get_scopekind(f):
 
 def apply_user(ctx, f, args):
     if type(args) != List:
-        return ctx.blank_error("invalid argument")
+        err = ctx.error("invalid argument", None)
+        return Result(None, err)
 
     s = Scope(f.parent_scope, get_scopekind(f))
     ctx.push_env(s)
@@ -172,13 +169,15 @@ def apply_user(ctx, f, args):
 
     # curr_arg finished first
     if type(curr_formal_arg) is List and type(curr_arg) != List:
-        return ctx.blank_error("not enough arguments")
+        err = ctx.error("not enough arguments", None)
+        return Result(None, err)
     # too many arguments
     if curr_formal_arg == nil and curr_arg != nil:
-        return ctx.blank_error("too many arguments")
+        err = ctx.error("too many arguments", None)
+        return Result(None, err)
 
     # variadic arguments
-    if type(curr_arg) is List and type(curr_formal_arg) is Symbol:
+    if type(curr_formal_arg) is Symbol:
         ctx.add_symbol(curr_formal_arg.symbol, curr_arg)
 
     res = eval(ctx, f.body)

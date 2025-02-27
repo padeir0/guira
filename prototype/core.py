@@ -591,6 +591,10 @@ class ListBuilder:
 
     def list(self):
         return self.root
+    def valid_list(self):
+        if self.root == None:
+            return nil
+        return self.root
 
 def _last(list):
     if type(list) is List:

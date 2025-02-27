@@ -1,0 +1,136 @@
+# This program ranks the courses in Physics
+# lectured at UFF by order of least importance.
+# Importance of a course A is defined
+# to be the number of other courses depending on A.
+# A course that has high importance has a high
+# chance to delay graduation.
+
+# Currently this program takes 2.6 seconds to run to completion
+# on my machine. This may serve as a benchmark.
+
+let macro
+  form [name args . exprs]
+    quote
+      let [unquote name]
+        form [unquote args]
+          unquote
+            cons [quote begin]
+                 exprs
+
+macro fun[name args . exprs]
+  quote
+    let [unquote name]
+      function [unquote args]
+        unquote
+          cons [quote begin]
+               exprs
+
+macro mq[first . others]
+  quote
+    cons [quote [unquote first]]
+         quote [unquote others]
+
+let course-list
+  mq
+    intro-fis "Introdução à Física"    []
+    ims       "Intro. Mat. Sup"        []
+    ga        "Geometria Analítica"    []
+    calc-1    "Cálculo 1"              []
+
+    fisica-1  "Física 1"               [intro-fis calc-1]
+    fis-exp-1 "Fisica Experimental 1"  [intro-fis calc-1]
+    alg       "Algoritmos"             []
+    linear-1  "Algebra Linear 1"       [ga]
+    calc-2    "Cálculo 2"              [ims ga calc-1]
+
+    fisica-2  "Física 2"               [fisica-1]
+    fis-exp-2 "Fisica Experimental 2"  [fisica-1 fis-exp-1]
+    prog      "Prog. de Computadores"  [alg]
+    icc       "Intro. Comp. Cientifi." [alg calc-1]
+    calc-3    "Cálculo 3"              [calc-2]
+    edo       "Equações Diferenciais"  [calc-1 linear-1]
+
+    fisica-3  "Física 3"               [fisica-2]
+    fis-exp-3 "Física Experimental 3"  [fisica-2 fis-exp-2]
+    mec-cla-1 "Mecânica Clássica 1"    [fis-2 calc-3 edo]
+    fis-mat-1 "Fisica Matemática 1"    [calc-3 edo]
+    e-dados   "Estrutura de Dados"     [prog]
+
+    eletro-1  "Eletromagnetismo 1"     [fisica-3 fis-mat-1]
+    mec-cla-2 "Mecânica Clássica 2"    [mec-cla-1]
+    met-1     "Métodos Numéricos 1"    [prog edo]
+    poo-1     "Prog. Ori. Objs. 1"     [prog]
+    fis-4     "Física 4"               [edo fisica-3 fis-exp-3]
+    fis-exp-4 "Física Experimental 4"  [fisica-3 fis-exp-3]
+
+    eletro-2  "Eletromagnetismo 2"     [eletro-1]
+    mec-qua-1 "Mecânica Quântica 1"    [fis-mat-1 mec-cla-2]
+    met-2     "Métodos Numéricos 2"    [fis-mat-1 met-1]
+    fis-mat-2 "Física Matemática 2"    [fis-mat-1]
+    fis-mod-1 "Fisica Moderna 1"       [fisica-4 fis-exp-4]
+
+    mec-qua-2 "Mecânica Quântica 2"    [mec-qua-1]
+    hpc-1     "Com. Cie. Alto. Des. 1" [met-2]
+    termo-1   "Termofísica 1"          [fisica-4]
+    fis-mod-2 "Fisica Moderna 2"       [fisica-4]
+    mono-1    "Proj. Monografia"       [eletro-1]
+
+    hpc-2     "Com. Cie. Alto. Des. 2" [poo-1 hpc-1]
+    termo-2   "Termofísica 2"          [mec-qua-1 termo-1]
+    mono-2    "Monografia"             [mono-1]
+
+fun c-id[x]
+  head x
+fun c-name[x]
+  head [tail x]
+fun c-deps[x]
+  head [tail [tail x]]
+
+fun c-find[ls course]
+  let a
+    filter 
+      function [x] [= x course]
+      ls
+  if a
+    [head a]
+    nil
+
+fun c-find-deps[ls course]
+  let a
+    filter
+      function [x]
+        c-find [c-deps x] course
+      ls
+  map c-id a
+
+fun c-ls-find-deps[ls courses]
+  unique
+    fold
+      function [a b]
+        append a
+               [c-find-deps ls b]
+      nil
+      courses
+
+fun deps[ls . symbols]
+  if [= symbols nil]
+     nil
+     append symbols
+            apply deps
+                  cons ls [c-ls-find-deps ls symbols]
+
+fun all-deps[ls]
+  map
+    function x
+      deps ls c-id:x
+    ls
+
+for
+  function x
+    begin
+      print head:x length:tail:x
+      print "    " tail:x
+  sort
+    all-deps:course-list
+    function [a b]
+      < length:a length:b

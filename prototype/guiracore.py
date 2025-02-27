@@ -746,7 +746,7 @@ def append_wrapper(ctx, list):
         else:
             err = ctx.error("improper list as arguments", list.range)
             return Result(None, err)
-    out = builder.list()
+    out = builder.valid_list()
     return Result(out, None)
 
 def reverse_wrapper(ctx, list):
@@ -813,7 +813,7 @@ def map_wrapper(ctx, list):
                     return res
                 builder.append_end(res.value)
                 curr = nil
-        list = builder.list()
+        list = builder.valid_list()
         return Result(list, None)
 
 def filter_wrapper(ctx, list):
@@ -860,9 +860,7 @@ def filter_wrapper(ctx, list):
                 if res.value != false:
                     builder.append_end(curr)
                 curr = nil
-        list = builder.list()
-        if list == None:
-            list = nil
+        list = builder.valid_list()
         return Result(list, None)
 
 def fold_wrapper(ctx, list):
@@ -962,8 +960,10 @@ def unique_wrapper(ctx, ls):
         return res
 
     arg0 = ls.head
+    if arg0 == nil:
+        return Result(nil, None)
     if type(arg0) != List:
-        err = ctx.error("expected list", ls.range)
+        err = ctx.error("expected list or nil", ls.range)
         return Result(None, err)
 
     if ls.tail == nil:
@@ -1000,8 +1000,10 @@ def sort_wrapper(ctx, ls):
         return res
 
     arg0 = ls.head
+    if arg0 == nil:
+        return Result(nil, None)
     if type(arg0) != List:
-        err = ctx.error("expected list", ls.range)
+        err = ctx.error("expected list or nil", ls.range)
         return Result(None, err)
 
     if ls.tail == nil:
@@ -1114,7 +1116,7 @@ def _eval_unquoted(ctx, list):
         else:
             builder.append_end(curr)
             curr = nil
-    return Result(builder.list(), None)
+    return Result(builder.valid_list(), None)
 
 # TODO: FEAT: implement unquote-splicing as "splice"
 # quasiquote expr
