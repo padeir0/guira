@@ -1,0 +1,27 @@
+if
+  != [slice "abc" 1 2]
+     "b"
+  abort "fail 1"
+  nil
+if
+  != [slice "abc" 0 3]
+     "abc"
+  abort "fail 2"
+  nil
+if
+  != [slice "abc" 0 0]
+     ""
+  abort "fail 3"
+  nil
+if
+  != [slice "abc" 2 3]
+     "c"
+  abort "fail 4"
+  nil
+if
+  != [slice "abc" 3 3]
+     ""
+  abort "fail 5"
+  nil
+
+print "slice.guira: OK"

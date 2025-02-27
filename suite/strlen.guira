@@ -1,0 +1,17 @@
+if
+  != string-length:""
+     0
+  abort "fail 1"
+  nil
+if
+  != string-length:"a"
+     1
+  abort "fail 2"
+  nil
+if
+  != string-length:"abcde"
+     5
+  abort "fail 3"
+  nil
+
+print "strlen.guira: OK"

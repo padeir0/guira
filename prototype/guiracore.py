@@ -18,7 +18,7 @@ def core_symbols(scope):
     add_form(scope, "begin",    begin_wrapper)
     add_form(scope, "quote",    quote_wrapper)
     # TODO: FEAT: 'help' special form for documentation
-    # TODO: FEAT: 'import' special form to bring intrinsic modules in scope
+    # TODO: THINK: should we have a module system like Python? If so shouldn't it be a combination of "namespace" and "load"?
     add_form(scope, "or",  or_wrapper)
     add_form(scope, "and", and_wrapper)
 
@@ -46,18 +46,6 @@ def core_symbols(scope):
     add_function(scope, "max-precision", max_precision_wrapper)
     add_function(scope, "numerator", numerator_wrapper)
     add_function(scope, "denominator", denominator_wrapper)
-
-    # STRING FUNCTIONS
-    # TODO: FEAT: concatenate    string . string -> string
-    # TODO: FEAT: slice          string num num -> string
-    # TODO: FEAT: string-length  string -> num
-    # (joins each element of the list with a separator)
-    # TODO: FEAT: split          string string -> list
-    # TODO: FEAT: join           list string -> string
-    # (follow go formatting rules)
-    # %v %#v %T %%
-    # %n %.6n %s %t %l
-    # TODO: FEAT: format         string . any -> string
 
     add_function(scope, "not",  not_wrapper)
 
@@ -90,10 +78,18 @@ def core_symbols(scope):
     add_function(scope, "fold",    fold_wrapper)
     add_function(scope, "unique",  unique_wrapper)
     add_function(scope, "sort",    sort_wrapper)
+    add_function(scope, "range",   range_wrapper)
+    # TODO: THINK: we need a procedure like "lookup" to optimize list lookups to be O(1) with a hashmap in the future
 
-    # LIST FUNCTIONS
-    # (length, start = 0,step = 1)
-    # TODO: FEAT: range       num [num [num]] -> list
+    add_function(scope, "concatenate",   concatenate_wrapper)
+    add_function(scope, "slice",         slice_wrapper)
+    add_function(scope, "string-length", string_length_wrapper)
+    add_function(scope, "split",         split_wrapper)
+    add_function(scope, "join",          join_wrapper)
+    # (follow go formatting rules)
+    # %v %#v %T %%
+    # %n %.6n %s %t %l
+    # TODO: FEAT: format         string . any -> string
 
     add_function(scope, "eval",  eval_wrapper)
     add_function(scope, "apply",  apply_wrapper)
@@ -190,6 +186,18 @@ def check_single_string(ctx, list):
     head = list.head
     if type(head) != String:
         err = ctx.error("expected string", list.range)
+        return Result(None, err)
+    return Result(None, None)
+
+def expect_integer(ctx, pair):
+    if type(pair.head) != Number or type(pair.head.number) != int:
+        err = ctx.error("expected number", pair.range)
+        return Result(None, err)
+    return Result(None, None)
+
+def expect(ctx, pair, t):
+    if type(pair.head) != t:
+        err = ctx.error(f"expected {t}", pair.range)
         return Result(None, err)
     return Result(None, None)
 
@@ -950,9 +958,48 @@ def for_wrapper(ctx, list):
                 curr = nil
         return Result(nil, None)
 
-# TODO: FEAT: range       num [num [num]] -> list
-def range_wrapper(ctx, list):
-    pass
+def _range(length, start=0, step=1):
+    if length == 0:
+        return nil
+    root = List(Number(start), nil)
+    curr = root
+    last = start
+    i = 0
+    while i < length-1: # -1 because the first is already done
+        next = last + step
+        curr.tail = List(Number(next), nil)
+        curr = curr.tail
+        last = next
+        i+=1
+    return root
+
+def range_wrapper(ctx, ls):
+    res = check_num_args_between(ctx, ls, 1, 3)
+    if res.failed():
+        return res
+    res = expect(ctx, ls, Number)
+    if res.failed():
+        return res
+
+    arg0 = ls.head
+    if ls.tail == nil:
+        out = _range(arg0.number)
+        return Result(out, None)
+
+    res = expect(ctx, ls.tail, Number)
+    if res.failed():
+        return res
+    arg1 = ls.tail.head
+    if ls.tail.tail == nil:
+        out = _range(arg0.number, arg1.number)
+        return Result(out, None)
+
+    res = expect(ctx, ls.tail.tail, Number)
+    if res.failed():
+        return res
+    arg2 = ls.tail.tail.head
+    out = _range(arg0.number, arg1.number, arg2.number)
+    return Result(out, None)
 
 def unique_wrapper(ctx, ls):
     res = check_num_args_between(ctx, ls, 1, 2)
@@ -1030,6 +1077,111 @@ def sort_wrapper(ctx, ls):
         except Error as err:
             return Result(None, err)
         return Result(out, None)
+
+### STRING FUNCTIONS
+
+def concatenate_wrapper(ctx, ls):
+    res = check_args_nil(ctx, ls)
+    if res.failed():
+        return res
+    res = expect(ctx, ls, String)
+    if res.failed():
+        return res
+    arg0 = ls.head
+
+    out = arg0.string
+    curr = ls.tail
+    while curr != nil:
+        if type(curr) is List:
+            res = expect(ctx, curr, String)
+            if res.failed():
+                return res
+            out += curr.head.string
+            curr = curr.tail
+        else:
+            err = ctx.error("improper list as argument", nil)
+            return Result(None, err)
+
+    out = String(out)
+    return Result(out, None)
+
+def slice_wrapper(ctx, ls):
+    res = check_num_args(ctx, ls, 3)
+    if res.failed():
+        return res
+    res = expect(ctx, ls, String)
+    if res.failed():
+        return res
+    arg0 = ls.head
+    res = expect_integer(ctx, ls.tail)
+    if res.failed():
+        return res
+    arg1 = ls.tail.head
+    res = expect_integer(ctx, ls.tail.tail)
+    if res.failed():
+        return res
+    arg2 = ls.tail.tail.head
+
+    if (arg1.number < 0 or
+        arg2.number < 0 or 
+        arg1.number > len(arg0.string) or
+        arg2.number > len(arg0.string)):
+        err = ctx.error("index out of bounds", None)
+        return Result(None, err)
+    
+    out = String(arg0.string[arg1.number:arg2.number])
+    return Result(out, None)
+
+def string_length_wrapper(ctx, ls):
+    res = check_num_args(ctx, ls, 1)
+    if res.failed():
+        return res
+    res = expect(ctx, ls, String)
+    if res.failed():
+        return res
+    arg0 = ls.head
+    out = Number(len(arg0.string))
+    return Result(out, None)
+    
+def split_wrapper(ctx, ls):
+    res = check_num_args(ctx, ls, 2)
+    if res.failed():
+        return res
+    res = expect(ctx, ls, String)
+    if res.failed():
+        return res
+    arg0 = ls.head
+    res = expect(ctx, ls.tail, String)
+    if res.failed():
+        return res
+    arg1 = ls.tail.head
+    if arg1.string == "":
+        err = ctx.error("empty string can't be used as separator", ls.tail.range)
+        return Result(None, err)
+    pyls = list(map(String, arg0.string.split(arg1.string)))
+    out = pylist_to_list(pyls)
+    return Result(out, None)
+
+def join_wrapper(ctx, ls):
+    res = check_num_args(ctx, ls, 2)
+    if res.failed():
+        return res
+    if ls.head == nil:
+        out = String("")
+        return Result(out, None)
+    res = expect(ctx, ls, List)
+    if res.failed():
+        return res
+    arg0 = ls.head
+
+    res = expect(ctx, ls.tail, String)
+    if res.failed():
+        return res
+    arg1 = ls.tail.head
+
+    s = arg1.string.join(map(str, list_to_pylist(arg0)))
+    out = String(s)
+    return Result(out, None)
 
 ### SIDE-EFFECTS
 
