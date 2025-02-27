@@ -205,12 +205,6 @@ def eval(ctx, expr):
         if res.failed():
             return improve(res, expr)
         head = res.value
-        if not (type(head) in [Function, Intrinsic_Function, Form, Intrinsic_Form]):
-            print("pyeval:", expr)
-            msg = "symbol is not callable: "+head.__str__()
-            err = ctx.error(msg, expr.head.range)
-            return Result(None, err)
-
         args = expr.tail
         # TODO: FEAT: allow unquote (,) to evaluate expressions in Forms
         if type(head) in [Function, Intrinsic_Function]:
