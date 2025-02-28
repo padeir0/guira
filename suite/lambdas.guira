@@ -1,11 +1,11 @@
 let square [function x [* x x]]
 let double [function x [* x 2]]
 
-if [!= [square [square [square 2]]] 256]
+if [not= [square [square [square 2]]] 256]
    abort "fail 1"
    nil
 
-if [!= [double [double 2]] 8]
+if [not= [double [double 2]] 8]
    abort "fail 2"
    nil
 
@@ -15,11 +15,11 @@ let fact
          1
          * n [fact [- n 1]]
 
-if [!= [fact 3] 6]
+if [not= [fact 3] 6]
    abort "fail 3"
    nil
 
-if [!= [fact 4] 24]
+if [not= [fact 4] 24]
    abort "fail 4"
    nil
 

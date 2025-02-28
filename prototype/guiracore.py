@@ -50,7 +50,7 @@ def core_symbols(scope):
     add_function(scope, "not",  not_wrapper)
 
     add_function(scope, "=",  eq_wrapper)
-    add_function(scope, "!=", neq_wrapper)
+    add_function(scope, "not=", neq_wrapper)
     add_function(scope, "<",  less_wrapper)
     add_function(scope, ">",  greater_wrapper)
     add_function(scope, "<=", less_eq_wrapper)

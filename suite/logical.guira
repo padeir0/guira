@@ -1,26 +1,26 @@
 if 
   and true true true
   nil
-  abort 'fail 1'
+  abort "fail 1"
 
 if 
-  and true false [abort 'fail 2']
-  abort 'fail 3'
+  and true false [abort "fail 2"]
+  abort "fail 3"
   nil
 
 if 
-  or true [abort 'fail 4']
+  or true [abort "fail 4"]
   nil
-  abort 'fail 5'
+  abort "fail 5"
 
 if 
   or false false
-  abort 'fail 6'
+  abort "fail 6"
   nil
 
 if
   and [not false] [not [not true]] true
   nil
-  abort 'fail 7'
+  abort "fail 7"
 
 print "logical.guira: OK"

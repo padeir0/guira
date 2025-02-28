@@ -180,6 +180,7 @@ def apply_user(ctx, f, args):
 def apply_intrinsic(ctx, f, args):
     return f.wrapper(ctx, args)
 
+# TODO: IMPROV: ensure lists are not improper before call, provide a procedure that doesn't check that (for use in eval)
 def apply(ctx, f, args):
     if type(args) != List:
         err = ctx.error("expected list of arguments", None)

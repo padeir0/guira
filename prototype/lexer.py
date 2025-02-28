@@ -12,7 +12,7 @@ def _is_letter(s):
 
 def _is_special(s):
     return s in [
-            "<", ">", "?", "=", "!",
+            "<", ">", "?", "=",
             "-", "+", "*", "/", "%",
             "$", "_"
         ]
@@ -125,7 +125,7 @@ class Lexer:
             return self._number()
         elif _is_ident_begin(r):
             return self._identifier()
-        elif r == "'" or r == "\"":
+        elif r == "\"":
             return self._str(r)
         elif r == "[":
             self._next_rune()

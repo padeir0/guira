@@ -1,15 +1,15 @@
 if
-  != string-length:""
+  not= string-length:""
      0
   abort "fail 1"
   nil
 if
-  != string-length:"a"
+  not= string-length:"a"
      1
   abort "fail 2"
   nil
 if
-  != string-length:"abcde"
+  not= string-length:"abcde"
      5
   abort "fail 3"
   nil

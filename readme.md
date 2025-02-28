@@ -125,11 +125,11 @@ Comment = '#' {not_newline_char} '\n'.
 Program = Block.
 Block = {:I_Expr NL}.
 
-I_Expr = Pairs {Line_Continue} [End | NL >Block].
+I_Expr = [sugar] Pairs {Line_Continue} [End | NL >Block].
 Line_Continue = '\\' NL Pairs.
 Pairs = Pair {Pair}.
 End = '.' Pair.
-Pair = Term {':' Term}.
+Pair = [sugar] Term {':' Term}.
 Term = Atom | S_Expr.
 S_Expr = '[' ML_Pairs ']'.
 ML_Pairs = [NL] Pair {ML_Pair} [NL] [End [NL]].
@@ -138,12 +138,11 @@ ML_Pair = [NL] Pair.
 NL = '\n' {'\n'}.
 Atom = id | num | str.
 
-str = sq_str | dq_str.
-sq_str = /'[\u0000-\uFFFF]*'/.
-dq_str = /"[\u0000-\uFFFF]*"/.
+sugar = '!' | "'" | ',' | '@'.
+str = /"[\u0000-\uFFFF]*"/.
 
 id = ident_begin {ident_continue}.
-ident_begin = /[a-zA-Z_<>\?=!\-\+\*\/\%\$]/.
+ident_begin = /[a-zA-Z_<>\?=\-\+\*\/\%\$]/.
 ident_continue = ident_begin | digit.
 
 num = hex | bin | dec.

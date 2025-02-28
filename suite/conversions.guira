@@ -1,25 +1,25 @@
 ###
-if [!= [to-string 1] "1"]
+if [not= [to-string 1] "1"]
    abort "fail 1a"
    nil
-if [!= [to-string [quote [a b c]]] "[a b c]"]
+if [not= [to-string [quote [a b c]]] "[a b c]"]
    abort "fail 1b"
    nil
-if [!= [to-string "s"] "s"]
+if [not= [to-string "s"] "s"]
    abort "fail 1c"
    nil
-if [!= [to-string 2/3] "2/3"]
+if [not= [to-string 2/3] "2/3"]
    abort "fail 1d"
    nil
 
 ###
-if [!= [to-symbol "a"] [quote a]]
+if [not= [to-symbol "a"] [quote a]]
    abort "fail 2a"
    nil
-if [!= [to-symbol "a-b-c"] [quote a-b-c]]
+if [not= [to-symbol "a-b-c"] [quote a-b-c]]
    abort "fail 2b"
    nil
-if [!= [to-symbol "symbol?"] [quote symbol?]]
+if [not= [to-symbol "symbol?"] [quote symbol?]]
    abort "fail 2c"
    nil
 if [symbol? [to-symbol "a"]]
@@ -27,83 +27,83 @@ if [symbol? [to-symbol "a"]]
    abort "fail 2d"
 
 ###
-if [!= [to-number "1"] 1]
+if [not= [to-number "1"] 1]
    abort "fail 3a"
    nil
-if [!= [to-number "~1"] ~1]
+if [not= [to-number "~1"] ~1]
    abort "fail 3b"
    nil
-if [!= [to-number "1/3"] 1/3]
+if [not= [to-number "1/3"] 1/3]
    abort "fail 3c"
    nil
-if [!= [to-number "1e10"] 1e10]
+if [not= [to-number "1e10"] 1e10]
    abort "fail 3d"
    nil
-if [!= [to-number "3.14159"] 3.14159]
+if [not= [to-number "3.14159"] 3.14159]
    abort "fail 3e"
    nil
 
 ###
 if
-  != [to-list "[a b c]"]
+  not= [to-list "[a b c]"]
      quote [[a b c]]
   abort "fail 4a"
   nil
 if
-  != [to-list "a"] 
+  not= [to-list "a"] 
      quote [a]
   abort "fail 4b"
   nil
 if
-  != [to-list "a:b c:d e:f"] 
+  not= [to-list "a:b c:d e:f"] 
      quote [[[a b] [c d] [e f]]]
   abort "fail 4c"
   nil
 if
-  != [to-list "a . b"]
+  not= [to-list "a . b"]
      quote [[a . b]]
   abort "fail 4d"
   nil
 if
-  != [to-list "a .. b"] nil
+  not= [to-list "a .. b"] nil
   abort "fail 4e"
   nil
 
 ###
-if [!= [to-exact 1.0] 1]
+if [not= [to-exact 1.0] 1]
    abort "fail 5a"
    nil
-if [!= [to-exact ~1.0] ~1]
+if [not= [to-exact ~1.0] ~1]
    abort "fail 5b"
    nil
-if [!= [to-exact [* 1/3 3]] 1]
+if [not= [to-exact [* 1/3 3]] 1]
    abort "fail 5c"
    nil
-if [!= [to-exact 1.0e10] 1e10]
+if [not= [to-exact 1.0e10] 1e10]
    abort "fail 5d"
    nil
 
 ###
 max-precision 4
-if [!= [to-inexact 1] 1.0]
+if [not= [to-inexact 1] 1.0]
    abort "fail 6a"
    nil
-if [!= [to-inexact ~1] ~1.0]
+if [not= [to-inexact ~1] ~1.0]
    abort "fail 6b"
    nil
-if [!= [to-inexact [* 1/3 3]] 1.0]
+if [not= [to-inexact [* 1/3 3]] 1.0]
    abort "fail 6c"
    nil
-if [!= [to-inexact 1e10] 1.0e10]
+if [not= [to-inexact 1e10] 1.0e10]
    abort "fail 6d"
    nil
-if [!= [to-inexact 1/3] 0.3333]
+if [not= [to-inexact 1/3] 0.3333]
    abort "fail 6e"
    nil
-if [!= [to-inexact 1/5] 0.2]
+if [not= [to-inexact 1/5] 0.2]
    abort "fail 6f"
    nil
-if [!= [to-inexact 22/7] 3.1429]
+if [not= [to-inexact 22/7] 3.1429]
    abort "fail 6g"
    nil
 

@@ -1,11 +1,11 @@
 let a [pair 1 2]
 let b [pair a [pair 3 4]]
 
-if [!= a [quote [1 . 2]]]
+if [not= a [quote [1 . 2]]]
   abort "fail 1"
   nil
 
-if [!= b [quote [[1 . 2] 3 . 4]]]
+if [not= b [quote [[1 . 2] 3 . 4]]]
   abort "fail 2"
   nil
 
@@ -14,11 +14,11 @@ let d
   quote
     0 [unquote c] 3
 
-if [!= c [pair 1 [pair 2 nil]]]
+if [not= c [pair 1 [pair 2 nil]]]
   abort "fail 3"
   nil
 
-if [!= d [quote [0 [1 2] 3]]]
+if [not= d [quote [0 [1 2] 3]]]
   abort "fail 4"
   nil
 

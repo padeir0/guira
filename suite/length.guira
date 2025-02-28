@@ -1,20 +1,20 @@
 if
-  != [length [list 1 2 3]] 3
+  not= [length [list 1 2 3]] 3
   abort "fail 1"
   nil
 
 if
-  != [length nil] 0
+  not= [length nil] 0
   abort "fail 2"
   nil
 
 if
-  != [length [quote [1 2]]] 2
+  not= [length [quote [1 2]]] 2
   abort "fail 3"
   nil
 
 if
-  != [length [quote [1 . 2]]] 1
+  not= [length [quote [1 . 2]]] 1
   abort "fail 4"
   nil
 

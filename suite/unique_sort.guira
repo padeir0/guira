@@ -1,7 +1,7 @@
 let a
   quote [a a b b c c]
 if
-  != sort:unique:a
+  not= sort:unique:a
      quote [a b c]
   abort "fail 1"
   nil
@@ -9,7 +9,7 @@ if
 let b
   list 1 1 2 2 3 3
 if
-  != sort:unique:b
+  not= sort:unique:b
      list 1 2 3
   abort "fail 2"
   nil
@@ -20,12 +20,12 @@ let c
       [a b c]
       [c d f]
 if
-  != sort:unique:c
+  not= sort:unique:c
      quote [[a b c] [c d f]]
   abort "fail 3"
   nil
 if
-  != sort:[unique c head]
+  not= sort:[unique c head]
      quote [[a b c] [c d f]]
   abort "fail 4"
   nil
@@ -36,7 +36,7 @@ let d
       [a c d]
       [c d f]
 if
-  != sort:[unique d head]
+  not= sort:[unique d head]
      quote [[a c d] [c d f]]
   abort "fail 5"
   nil
@@ -50,7 +50,7 @@ let less
   function [a b]
     < [last a] [last b]
 if
-  != [sort e less]
+  not= [sort e less]
      quote [[c x a] [b x b] [a x c]]
   abort "fail 6"
   nil

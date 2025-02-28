@@ -1,20 +1,20 @@
 if 
-  != [concatenate "a" "b" "c" "d"]
+  not= [concatenate "a" "b" "c" "d"]
      "abcd"
   abort "fail 1"
   nil
 if 
-  != [concatenate "a" "" "b" "" "c"]
+  not= [concatenate "a" "" "b" "" "c"]
      "abc"
   abort "fail 2"
   nil
 if 
-  != [concatenate "a"]
+  not= [concatenate "a"]
      "a"
   abort "fail 3"
   nil
 if 
-  != [concatenate "abc" "def" "ghi"]
+  not= [concatenate "abc" "def" "ghi"]
      "abcdefghi"
   abort "fail 4"
   nil

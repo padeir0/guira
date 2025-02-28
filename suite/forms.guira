@@ -33,13 +33,13 @@ fun sum[args]
      0
      + [head args] [sum [tail args]]
 
-if [!= [square 2] 4]
+if [not= [square 2] 4]
   abort "fail 1"
   nil
-if [!= [fact 6] 720]
+if [not= [fact 6] 720]
   abort "fail 2"
   nil
-if [!= [sum [list 1 2 3 4 5 6]] 21]
+if [not= [sum [list 1 2 3 4 5 6]] 21]
   abort "fail 3"
   nil
 

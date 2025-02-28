@@ -1,15 +1,15 @@
 if
-  != [join [list "1" "2" "3"] " "]
+  not= [join [list "1" "2" "3"] " "]
      "1 2 3"
   abort "fail 1"
   nil
 if
-  != [join [list 1 2 3] " "]
+  not= [join [list 1 2 3] " "]
      "1 2 3"
   abort "fail 2"
   nil
 if
-  != [join nil " "]
+  not= [join nil " "]
      ""
   abort "fail 3"
   nil

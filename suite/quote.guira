@@ -1,11 +1,11 @@
 if 
-  != [pair 1 [pair 2 3]]
+  not= [pair 1 [pair 2 3]]
      [quote [1 2 . 3]]
   abort "fail 1" [quote [1 2 . 3]] [pair 1 [pair 2 3]]
   nil
 
 if 
-  != [pair 1 [pair 2 3]]
+  not= [pair 1 [pair 2 3]]
      quote 
            1 2 . 3
   abort "fail 2"
@@ -20,19 +20,19 @@ let b
          5 6 . 7]
 let c [quote [1 2 3 4 5 6 . 7]]
 
-if [!= a b c]
+if [not= a b c]
   begin
     print a b c
     abort "fail 3"
   nil
 
 if 
-  != [quote [[1] 2]] [pair [pair 1 nil] [pair 2 nil]]
+  not= [quote [[1] 2]] [pair [pair 1 nil] [pair 2 nil]]
   abort "fail 4" 
   nil
 
 if 
-  != 
+  not= 
     quote 
       [1] 2
     [pair [pair 1 nil] [pair 2 nil]]
@@ -40,7 +40,7 @@ if
     print 
       quote 
         [1] 2
-      "!="
+      "not="
       [pair [pair 1 nil] [pair 2 nil]]
     abort "fail 5" 
   nil

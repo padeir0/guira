@@ -1,15 +1,15 @@
 if
-  != [split "a b c" " "]
+  not= [split "a b c" " "]
      list "a" "b" "c"
   abort "fail 1" [split "a b c" " "]
   nil
 if
-  != [split "a  b c  d" "  "]
+  not= [split "a  b c  d" "  "]
      list "a" "b c" "d"
   abort "fail 2"
   nil
 if
-  != [split "abcd" "bc"]
+  not= [split "abcd" "bc"]
      list "a" "d"
   abort "fail 3"
   nil

@@ -29,7 +29,7 @@ fun f-uq[x]
        atom x
 
 if
-  !=
+  not=
     pair [quote unquote]
          atom quote:[+ 2 3]
     f-uq quote:[+ 2 3]

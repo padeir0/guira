@@ -41,35 +41,35 @@ let e_8
       c
       d
 
-if [!= e_1 e_2]
+if [not= e_1 e_2]
   abort "fail e_1 e_2"
   nil
 
-if [!= e_2 e_3]
+if [not= e_2 e_3]
   abort "fail e_2 e_3"
   nil
 
-if [!= e_3 e_4]
+if [not= e_3 e_4]
   abort "fail e_3 e_4"
   nil
 
-if [!= e_4 e_5]
+if [not= e_4 e_5]
   abort "fail e_4 e_5"
   nil
 
-if [!= e_5 e_6]
+if [not= e_5 e_6]
   abort "fail e_5 e_6"
   nil
 
-if [!= e_6 e_7]
+if [not= e_6 e_7]
   abort "fail e_6 e_7"
   nil
 
-if [!= e_7 e_8]
+if [not= e_7 e_8]
   abort "fail e_7 e_8"
   nil
 
-if [!= e_8 e_1]
+if [not= e_8 e_1]
   abort "fail e_8 e_1"
   nil
 

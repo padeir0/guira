@@ -1,5 +1,5 @@
 if
-  !=
+  not=
     filter
       symbol?
       list [quote a] 2 [quote b] 3 4
@@ -8,7 +8,7 @@ if
   nil
 
 if
-  !=
+  not=
     filter
       number?
       list [quote a] 2 [quote b] 3 4

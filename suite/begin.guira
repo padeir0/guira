@@ -4,6 +4,6 @@ if
     nil
     true
   nil
-  abort 'fail 1'
+  abort "fail 1"
 
 print "begin.guira: OK"

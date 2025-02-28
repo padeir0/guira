@@ -4,7 +4,7 @@ let e_1
 let e_2
   quote [a [b [c [d [e f]]]]]
 
-if [!= e_1 e_2]
+if [not= e_1 e_2]
    abort "fail 1" e_1 e_2
    nil
 

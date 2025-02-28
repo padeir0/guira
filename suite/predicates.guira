@@ -1,6 +1,6 @@
 ###
 
-if [string? 'a']
+if [string? "a"]
    nil
    abort "fail 1a"
 if [string? 1]
@@ -18,7 +18,7 @@ if [number? 1.0]
 if [number? 1/1]
    nil
    abort "fail 2c"
-if [number? 'a']
+if [number? "a"]
    abort "fail 2d"
    nil
 
@@ -51,7 +51,7 @@ if [atom? 1]
 if [atom? [quote a]]
    nil
    abort "fail 5b"
-if [atom? 'abc']
+if [atom? "abc"]
    nil
    abort "fail 5c"
 if [atom? atom?]
@@ -123,7 +123,7 @@ if [exact? 1.1]
 if [exact? [/ 1 2]]
    nil
    abort "fail 9d"
-if [exact? 'a']
+if [exact? "a"]
    abort "fail 9e"
    nil
 if [exact? exact?]
@@ -147,7 +147,7 @@ if [inexact? [+ 1.1 1]]
 if [inexact? [/ 1 2]]
    abort "fail 10e"
    nil
-if [inexact? 'a']
+if [inexact? "a"]
    abort "fail 10f"
    nil
 if [inexact? inexact?]

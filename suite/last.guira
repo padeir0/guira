@@ -1,17 +1,17 @@
 if
-  != [last [list 1 2 3]] 3
+  not= [last [list 1 2 3]] 3
   abort "fail 1" [last [list 1 2 3]]
   nil
 if
-  != [last [list 1]] 1
+  not= [last [list 1]] 1
   abort "fail 2"
   nil
 if
-  != [last [quote [1 2 3]]] 3
+  not= [last [quote [1 2 3]]] 3
   abort "fail 3"
   nil
 if
-  != [last [quote [1 2 . 3]]] 3
+  not= [last [quote [1 2 . 3]]] 3
   abort "fail 4"
   nil
 

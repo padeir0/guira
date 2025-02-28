@@ -7,11 +7,11 @@ if [= a 1]
 
 if [= b 2]
   nil
-  abort 'fail 2'
+  abort "fail 2"
 
 let c [pair a [pair b nil]]
 
-if [!= c [pair 1 [pair 2 nil]]]
+if [not= c [pair 1 [pair 2 nil]]]
   abort "fail 3"
   nil
 
