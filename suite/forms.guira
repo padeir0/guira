@@ -7,7 +7,7 @@ let macro
             pair [quote begin]
                  exprs
 
-macro fun[name args . exprs]
+!macro fun[name args . exprs]
   quote
     let [unquote name]
       function [unquote args]
@@ -15,20 +15,15 @@ macro fun[name args . exprs]
           pair [quote begin]
                exprs
 
-macro list[first . exprs]
-  quote
-    pair [unquote first]
-         quote [unquote exprs]
-
-fun square x
+!fun square x
   * x x
 
-fun fact[n]
+!fun fact[n]
   if [<= n 1]
      1
      [* n [fact [- n 1]]]
 
-fun sum[args]
+!fun sum[args]
   if [= args nil]
      0
      + [head args] [sum [tail args]]

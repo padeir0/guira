@@ -4,7 +4,6 @@ from core import *
 from fractions import Fraction
 from util import convert_number
 
-# TODO: SUGAR: use: ',@ to serve as quote, unquote and splice respectivelly
 def parse(modname, string, track):
     parser = _Parser(Lexer(modname, string))
     if track:
@@ -17,7 +16,7 @@ def parse(modname, string, track):
         return res
 
     if not parser.word_is(lexkind.EOF):
-        err = parser.error("unexpected token or symbol")
+        err = parser.error("syntax error")
         return Result(None, err)
 
     return res
@@ -144,10 +143,17 @@ def __continue(parser):
     list = builder.list()
     return Result(list, None)
 
-# I_Expr = Pairs {Line_Continue} [End | NL >Block].
+# I_Expr = [sugar] Pairs {Line_Continue} [End | NL >Block].
 def _i_expr(parser):
     parser.track("_i_expr")
+    start_column = parser.curr_indent()
+
     builder = ListBuilder()
+    res = _sugar(parser)
+    if res.failed():
+        return res
+    if res.value != None:
+        builder.sweeten(res.value)
 
     res = _pairs(parser)
     if res.failed():
@@ -172,9 +178,6 @@ def _i_expr(parser):
         if res.failed():
             return res
 
-        value = builder.list()
-        value.compute_ranges()
-        start_column = value.start_column()
         res = parser.indent_prod(start_column, _block)
         if res.failed():
             return res
@@ -217,22 +220,33 @@ def _pairs(parser):
 
     return Result(builder.list(), None)
 
-# Pair = Term {':' Term}.
+# Pair = [sugar] Term {':' Term}.
 def _pair(parser):
     parser.track("_pair")
+    sugar = None
+
+    res = _sugar(parser)
+    if res.failed():
+        return res
+    if res.value != None:
+        sugar = res.value
+    
     res = _term(parser)
     if res.failed() or res.value == None:
         return res
-    first = res.value
+    out = res.value
 
     res = parser.repeat(_colon_term)
     if res.failed():
         return res
     if res.value != None:
-        leaves = [first] + res.value
-        list = pylist_to_nested_list(leaves)
-        return Result(list, None)
-    return Result(first, None)
+        leaves = [out] + res.value
+        out = pylist_to_paired_list(leaves)
+
+    if sugar != None:
+        out = pylist_to_paired_list(sugar + [out])
+
+    return Result(out, None)
 
 # ':' Term
 def _colon_term(parser):
@@ -312,19 +326,7 @@ def _ml_pairs(parser):
 def _ml_pair(parser):
     parser.track("ml_pair")
     _discard_nl(parser)
-    res = _term(parser)
-    if res.failed() or res.value == None:
-        return res
-    first = res.value
-
-    res = parser.repeat(_colon_term)
-    if res.failed():
-        return res
-    if res.value != None:
-        leaves = [first] + res.value
-        list = pylist_to_list(leaves)
-        return Result(list, None)
-    return Result(first, None)
+    return _pair(parser)
 
 # End = '.' Pair.
 def _end(parser):
@@ -377,3 +379,27 @@ def _NL(parser):
 def _discard_nl(parser):
     while parser.word_is(lexkind.NL):
         parser.consume()
+
+# sugar = {grain}.
+def _sugar(parser):
+    parser.track("_sugar")
+    return parser.repeat(_grain)
+
+# grain = '!' | "'" | ',' | '@'.
+def _grain(parser):
+    parser.track("_grain")
+    out = None
+    if parser.word_is(lexkind.QUOTE):
+        out = Symbol("quote")
+    elif parser.word_is(lexkind.BANG):
+        out = Symbol("eval")
+    elif parser.word_is(lexkind.COMMA):
+        out = Symbol("unquote")
+    elif parser.word_is(lexkind.AT):
+        out = Symbol("splice")
+    else:
+        return Result(None, None)
+    res = parser.consume()
+    if res.failed():
+        return res
+    return Result(out, None)

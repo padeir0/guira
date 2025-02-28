@@ -183,7 +183,8 @@ def apply_intrinsic(ctx, f, args):
 # TODO: IMPROV: ensure lists are not improper before call, provide a procedure that doesn't check that (for use in eval)
 def apply(ctx, f, args):
     if type(args) != List:
-        err = ctx.error("expected list of arguments", None)
+        msg = "expected list of arguments, instead got: " +args.__str__()
+        err = ctx.error(msg, None)
         return Result(None, err)
     if type(f) in [Intrinsic_Form, Intrinsic_Function]:
         return apply_intrinsic(ctx, f, args)
@@ -210,9 +211,6 @@ def eval(ctx, expr):
         res = apply(ctx, head, args)
         if res.failed():
             return improve(res, expr)
-
-        if type(head) is Form:
-            return eval(ctx, res.value)
         return res
     elif type(expr) is Symbol:
         res = ctx.retrieve(expr.symbol)

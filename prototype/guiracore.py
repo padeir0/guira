@@ -153,7 +153,7 @@ def format_args(args):
 
 def check_num_args(ctx, list, num):
     if list == nil or type(list) != List or list.length() != num:
-        msg = f"expected {num} arguments"
+        msg = f"expected {num} arguments ({list})"
         err = ctx.error(msg, None)
         return Result(None, err)
     return Result(None, None)

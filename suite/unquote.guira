@@ -7,24 +7,24 @@ let macro
             pair [quote begin]
                  exprs
 
-macro fun[name args . exprs]
+!macro fun[name args . exprs]
   quote
     let [unquote name]
       function [unquote args]
         unquote
           pair [quote begin]
                exprs
-macro uq[x]
+!macro uq[x]
   quote
     pair [quote unquote]
          pair quote:[unquote x]
               nil
 
-fun atom[x]
+!fun atom[x]
   pair x
        nil
 
-fun f-uq[x]
+!fun f-uq[x]
   pair [quote unquote]
        atom x
 
@@ -33,7 +33,7 @@ if
     pair [quote unquote]
          atom quote:[+ 2 3]
     f-uq quote:[+ 2 3]
-    uq [+ 2 3]
+    !uq [+ 2 3]
   abort "fail"
   nil
 

@@ -14,6 +14,11 @@ BACKSLASH = 7
 NL = 8
 EOF = 9
 
+QUOTE = 10
+BANG  = 11
+COMMA = 12
+AT    = 13
+
 def to_string(kind):
     if kind == INVALID:
         return "INVALID"

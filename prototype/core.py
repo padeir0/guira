@@ -143,22 +143,43 @@ class Nil:
 
 nil = Nil()
 
+def _sweeten(str):
+    if str == "quote":
+        return "'"
+    elif str == "eval":
+        return "!"
+    elif str == "unquote":
+        return ","
+    elif str == "splice":
+        return "@"
+    return ""
+
 class List:
     def __init__(self, head, tail):
         self.head = head
         self.tail = tail
         self.range = None
     def __str__(self):
-        out = "["+ self.head._strlist()
-        curr = self.tail
+        close = True
+        out = "["
+        curr = self
+        if type(curr.head) is Symbol:
+            s = _sweeten(curr.head.symbol)
+            if s != "":
+                out = s
+                close = False
+                curr = curr.tail
+        ls = []
         while curr != nil:
             if type(curr) is List:
-                out += " " + curr.head._strlist()
+                ls += [curr.head._strlist()]
                 curr = curr.tail
             else:
-                out += " . " + curr._strlist()
+                ls += [" . " + curr._strlist()]
                 curr = nil
-        out += "]"
+        out += " ".join(ls)
+        if close:
+            out += "]"
         return out
     def _strlist(self):
         return self.__str__()
@@ -195,6 +216,7 @@ class List:
 
     def append(self, other):
         self.last().tail = other
+        return self
 
     def last(self):
         curr = self
@@ -288,7 +310,7 @@ class Symbol:
         self.symbol = symbol
         self.range = None
     def __str__(self):
-        return "'" + self.symbol
+        return self.symbol
     def _strlist(self):
         return self.symbol
     def start_column(self):
@@ -522,7 +544,7 @@ def list_to_pylist(list):
             curr = nil
     return out
 
-def pylist_to_nested_list(pylist):
+def pylist_to_paired_list(pylist):
     if len(pylist) == 0:
         return nil
 
@@ -543,6 +565,12 @@ class ListBuilder:
     def __init__(self):
         self.root = None
         self.last = None
+        self.sugar = None
+
+    def sweeten(self, sugar):
+        if type(sugar) != list:
+            raise Exception("invalid type for sugar, should be a python list")
+        self.sugar = sugar
 
     def proper(self):
         return self.last == None or type(self.last) == List
@@ -590,11 +618,18 @@ class ListBuilder:
         self.last = _last(list)
 
     def list(self):
-        return self.root
+        if self.sugar == None:
+            return self.root
+        out = pylist_to_paired_list(self.sugar + [self.root])
+        return out
     def valid_list(self):
-        if self.root == None:
-            return nil
-        return self.root
+        out = nil
+        if self.root != None:
+            out = self.root
+        if self.sugar == None:
+            return out
+        out = pylist_to_paired_list(self.sugar + [out])
+        return out
 
 def _last(list):
     if type(list) is List:

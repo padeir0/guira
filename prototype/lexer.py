@@ -145,6 +145,18 @@ class Lexer:
         elif r == "\n":
             self._next_rune()
             return self._emit(lexkind.NL)
+        elif r == "'":
+            self._next_rune()
+            return self._emit(lexkind.QUOTE)
+        elif r == "!":
+            self._next_rune()
+            return self._emit(lexkind.BANG)
+        elif r == ",":
+            self._next_rune()
+            return self._emit(lexkind.COMMA)
+        elif r == "@":
+            self._next_rune()
+            return self._emit(lexkind.AT)
         elif r == "":
             return Lexeme("", lexkind.EOF, self.range.copy())
         else:

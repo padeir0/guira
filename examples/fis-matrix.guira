@@ -2,7 +2,7 @@
 # The importance of a course A is the number of other courses that depend on A.
 # A course with high importance is more likely to delay graduation.
 
-# Currently this program takes 3 seconds to run to completion
+# Currently this program takes 3.7 seconds to run to completion
 # on my machine. This may serve as a benchmark.
 
 let macro
@@ -14,7 +14,7 @@ let macro
             pair [quote begin]
                  exprs
 
-macro fun[name args . exprs]
+!macro fun[name args . exprs]
   quote
     let [unquote name]
       function [unquote args]
@@ -22,13 +22,11 @@ macro fun[name args . exprs]
           pair [quote begin]
                exprs
 
-macro mq[first . others]
-  quote
-    pair quote:unquote:first
-         quote:unquote:others
+!macro multi-quote[first . others]
+  pair first others
 
 let course-list
-  mq
+  multi-quote
     intro-fis "Introdução à Física"    []
     ims       "Intro. Mat. Sup"        []
     ga        "Geometria Analítica"    []
@@ -76,11 +74,11 @@ let course-list
     termo-2   "Termofísica 2"          [mec-qua-1 termo-1]
     mono-2    "Monografia"             [mono-1]
 
-fun c-id[x] head:x
-fun c-name[x] head:tail:x
-fun c-deps[x] head:tail:tail:x
+!fun c-id[x] head:x
+!fun c-name[x] head:tail:x
+!fun c-deps[x] head:tail:tail:x
 
-fun retrieve[ls course]
+!fun retrieve[ls course]
   let a
     filter 
       function [x]
@@ -90,7 +88,7 @@ fun retrieve[ls course]
      head:a
      nil
 
-fun c-find[ls course]
+!fun c-find[ls course]
   let a
     filter 
       function [x] [= x course]
@@ -99,7 +97,7 @@ fun c-find[ls course]
     head:a
     nil
 
-fun c-find-deps[ls course]
+!fun c-find-deps[ls course]
   let a
     filter
       function [x]
@@ -107,7 +105,7 @@ fun c-find-deps[ls course]
       ls
   map c-id a
 
-fun c-ls-find-deps[ls courses]
+!fun c-ls-find-deps[ls courses]
   unique
     fold
       function [a b]
@@ -116,17 +114,15 @@ fun c-ls-find-deps[ls courses]
       nil
       courses
 
-# return false or abort if any dependencies
-# are not first listed as a course.
-fun find-not-defined[ls]
+!fun find-not-defined[ls]
     let courses
       map c-id ls
-    fun valid-deps [deps]
+    !fun valid-deps [deps]
       filter
         function x
           nil?:[c-find courses x]
         deps
-    fun append-not-found[a b]
+    !fun append-not-found[a b]
        let deps c-deps:b
        if nil?:deps
           a
@@ -139,15 +135,15 @@ fun find-not-defined[ls]
         ls
     sort:unique:not-defined
 
-fun deps[ls . symbols]
+!fun deps[ls . symbols]
   if [= symbols nil]
      nil
      append symbols
             apply deps
                   pair ls [c-ls-find-deps ls symbols]
 
-fun all-deps[ls]
-  fun clean-deps[x]
+!fun all-deps[ls]
+  !fun clean-deps[x]
       let a
         deps ls c-id:x
       pair head:a
@@ -160,7 +156,7 @@ let not-defined
   find-not-defined:course-list
 
 if
-  != length:not-defined 0
+  not= length:not-defined 0
   begin
     for
       function x
@@ -176,7 +172,7 @@ let graph
       < length:a length:b
 
 if 
-  != length:graph length:course-list
+  not= length:graph length:course-list
   abort "graph does not include all courses"
   nil
 
