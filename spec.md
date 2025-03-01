@@ -1,9 +1,6 @@
 # Guira
 
-The goal of Guira is to be a minimalistic scripting language:
-quick to learn, flexible and not too slow.
-It is a pure Lisp-1 based on I-Expressions that
-uses FEXPRs instead of macros.
+This is a quick, informal and incomplete specification of the language.
 
 <details>
 
@@ -83,14 +80,53 @@ The expression `[head [head list]]` can be rewritten `head:head:list`.
 Guira implements metaprogramming at runtime
 through the use of FEXPR, which here are called _forms_.
 
+A form is simply a function that receives arguments without evaluation,
+that is: arguments are implicitly quoted. Here's an example:
+
+```
+let my-quote
+  form [a] a
+```
+
+This form has the same behaviour of `quote`, except that to `unquote` and `splice` things
+you need to use `form-unquote` and `form-splice`, respectivelly.
+
+```
+print
+  my-quote
+    list 1 2
+      form-unquote [+ 1 2]
+      form-unquote [+ 2 3]
+```
+
+This prints `[list 1 2 3 5]`. There is syntax sugar for `form-unquote` and `form-splice`,
+they are `;` and `&` respectivelly, so that the above code can be shortened:
+
+```
+print
+  my-quote
+    list 1 2 ;[+ 1 2] ;[+ 2 3]
+```
+
+If a form returns code, you can evaluate it with `eval`.
+
+```
+let a
+  form [x]
+    '+ 1 ,x
+print [a 1] [eval [a 1]]
+```
+
+This prints `[+ 1 1] 2`. The excerpt `[eval [a 1]]` can be shortened to `![a 1]`.
+
 There are two kinds of forms: intrinsic forms and user defined forms.
 They are different in the sense that intrinsic forms have control of the
-environment and cannot be defined by the user. In contrast, user defined
-forms have their own environment, and must return an object to be evaluated
-in the caller environment.
+environment and cannot be defined by the user.
 
 This allows all special forms of other lisps (`if`, `quote`, `lambda`, etc)
-to be implemented as forms, which also mean they are first class.
+to be implemented as forms, which also mean they are first class. It is
+completely valid to do `[help if]` because `if` is just an identifier.
+This allows the language to document itself.
 
 ## Syntax <a name="syntax"></a>
 
@@ -158,3 +194,11 @@ neg = '~'.
 digit = /[0-9]/.
 digit_ = digit | '_'.
 ```
+
+## Future <a name="future"></a>
+
+After the prototype is finished, i will rewrite everything
+in C99 for performance reasons. This will also allow me to use Emscripten
+to compile the interpreter to WASM and create a playground, which is much
+needed. The C99 interpreter will also be designed with embedding in mind,
+although not for constrained environments.
