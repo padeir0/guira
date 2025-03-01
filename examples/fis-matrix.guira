@@ -21,6 +21,7 @@ let macro
 
 let course-list
   multi-quote
+  # id        name                     requirements
     intro-fis "Introdução à Física"    []
     ims       "Intro. Mat. Sup"        []
     ga        "Geometria Analítica"    []
@@ -49,7 +50,7 @@ let course-list
     mec-cla-2 "Mecânica Clássica 2"    [mec-cla-1]
     met-1     "Métodos Numéricos 1"    [prog edo]
     poo-1     "Prog. Ori. Objs. 1"     [prog]
-    fisica-4  "Física 4"                  [edo fisica-3 fis-exp-3]
+    fisica-4  "Física 4"               [edo fisica-3 fis-exp-3]
     fis-exp-4 "Física Experimental 4"  [fisica-3 fis-exp-3]
 
     eletro-2  "Eletromagnetismo 2"     [eletro-1]
