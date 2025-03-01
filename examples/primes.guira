@@ -1,0 +1,26 @@
+let fun
+  form [name vars . exprs]
+    'let ,name
+      function ,vars
+        begin @exprs
+
+!fun divisible?[a b]
+  = [remainder a b] 0
+
+!fun not-prime?[n]
+  fold
+    function [a b]
+      or a
+         divisible? n b
+    false
+    range [- n 2] 2
+
+!fun prime?[n]
+  not not-prime?:n
+
+let primes
+  filter
+    prime?
+    range 254 2
+
+print primes

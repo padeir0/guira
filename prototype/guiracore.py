@@ -480,7 +480,11 @@ def div_wrapper(ctx, list):
         if type(curr.head) != Number:
             err = ctx.error("expected number", curr.head.range)
             return Result(None, err)
-        out.div(curr.head, ctx.precision)
+        num = curr.head
+        if num.number == 0:
+            err = ctx.error("division by zero", curr.range)
+            return Result(None, err)
+        out.div(num, ctx.precision)
         curr = curr.tail
     return Result(out, None)
 
@@ -495,6 +499,10 @@ def remainder_wrapper(ctx, list):
         return Result(None, err)
     if type(b) != Number or type(b.number) != int:
         err = ctx.error("expected integer", list.tail.range)
+        return Result(None, err)
+
+    if b.number == 0:
+        err = ctx.error("division by zero", list.tail.range)
         return Result(None, err)
 
     out = Number(a.number % b.number)
