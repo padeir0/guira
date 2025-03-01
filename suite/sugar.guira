@@ -1,0 +1,37 @@
+let f-quote
+  form [a]
+    a
+
+let assert
+  form cond
+    'if ,cond
+        nil
+        abort "assert failed:" ,to-string:cond
+
+!assert
+  = 'a [quote a] quote:a
+!assert
+  =
+    'a
+    quote a
+    quote:a
+!assert
+  =
+    'a b
+    quote [a b]
+    quote:[a b]
+!assert
+  =
+    'a b 'c
+    quote [a b [quote c]]
+    quote:[a b quote:c]
+!assert
+  = '''a [quote [quote [quote a]]]
+!assert
+  = '!a [quote [eval a]]
+
+!assert
+  = [f-quote '!a]
+    quote [quote [eval a]]
+
+print "sugar.guira: OK"

@@ -1,39 +1,35 @@
 let macro
   form [name args . exprs]
-    quote
-      let [unquote name]
-        form [unquote args]
-          unquote
-            pair [quote begin]
-                 exprs
+    'let ,name
+      form ,args
+        begin @exprs
 
 !macro fun[name args . exprs]
-  quote
-    let [unquote name]
-      function [unquote args]
-        unquote
-          pair [quote begin]
-               exprs
-!macro uq[x]
-  quote
-    pair [quote unquote]
-         pair quote:[unquote x]
-              nil
+  'let ,name
+    function ,args
+      begin @exprs
+
+!macro multi-quote[first . ls]
+  pair first ls
 
 !fun atom[x]
   pair x
        nil
 
+!macro uq[x]
+  pair 'unquote
+       atom x
+
 !fun f-uq[x]
-  pair [quote unquote]
+  pair 'unquote
        atom x
 
 if
   not=
-    pair [quote unquote]
-         atom quote:[+ 2 3]
-    f-uq quote:[+ 2 3]
-    !uq [+ 2 3]
+    f-uq '[+ 2 3]
+    uq [+ 2 3]
+    pair 'unquote
+             atom '[+ 2 3]
   abort "fail"
   nil
 

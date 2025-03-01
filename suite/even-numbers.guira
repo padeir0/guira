@@ -1,0 +1,31 @@
+[let even-list-1
+  [function n
+    [filter
+      even?
+      [range n]]]]
+
+let even-list-2
+  function n
+    filter
+      even?
+      range n
+
+let fun
+  form [name args . exprs]
+    'let ,name
+      function ,args
+        begin @exprs
+
+!fun even-list-3[n]
+  filter
+    even?
+    range n
+
+if 
+  not= even-list-1:10
+       even-list-2:10
+       even-list-3:10
+  abort "failed!"
+  nil
+
+print "even-numbers.guira: OK"

@@ -407,7 +407,7 @@ class String:
     def __str__(self):
         return self.string
     def _strlist(self):
-        return "'" + self.string + "'"
+        return "\"" + self.string + "\""
     def start_column(self):
         return self.range.start.column
     def compute_ranges(self):
@@ -621,6 +621,14 @@ class ListBuilder:
         if self.sugar == None:
             return self.root
         out = pylist_to_paired_list(self.sugar + [self.root])
+        return out
+    def i_list(self):
+        root = self.root
+        if self.root.tail == nil:
+            root = self.root.head
+        if self.sugar == None:
+            return root
+        out = pylist_to_paired_list(self.sugar + [root])
         return out
     def valid_list(self):
         out = nil

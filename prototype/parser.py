@@ -185,9 +185,7 @@ def _i_expr(parser):
         if block != None:
             builder.append_list(block)
 
-    list = builder.list()
-    if list.tail == nil:
-        return Result(list.head, None)
+    list = builder.i_list()
     return Result(list, None)
 
 # Line_Continue = '\\' NL Pairs.
@@ -397,6 +395,10 @@ def _grain(parser):
         out = Symbol("unquote")
     elif parser.word_is(lexkind.AT):
         out = Symbol("splice")
+    elif parser.word_is(lexkind.SEMICOLON):
+        out = Symbol("form-unquote")
+    elif parser.word_is(lexkind.AMPERSAND):
+        out = Symbol("form-splice")
     else:
         return Result(None, None)
     res = parser.consume()

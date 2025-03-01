@@ -7,23 +7,17 @@
 
 let macro
   form [name args . exprs]
-    quote
-      let [unquote name]
-        form [unquote args]
-          unquote
-            pair [quote begin]
-                 exprs
+    'let ,name
+      form ,args
+        begin @exprs
 
 !macro fun[name args . exprs]
-  quote
-    let [unquote name]
-      function [unquote args]
-        unquote
-          pair [quote begin]
-               exprs
+  'let ,name
+    function ,args
+      begin @exprs
 
-!macro multi-quote[first . others]
-  pair first others
+!macro multi-quote[first . ls]
+  pair first ls
 
 let course-list
   multi-quote

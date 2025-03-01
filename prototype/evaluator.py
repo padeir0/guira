@@ -7,14 +7,14 @@ class Scope:
         self.parent = parent
         self.name = ""
         self.dict = {}
-    # TODO: IMPROV: allow "add_symbol" to attach documentation in a separate dictionary
+    # TODO: IMPROVE: allow "add_symbol" to attach documentation in a separate dictionary
     def add_symbol(self, name, obj):
         self.dict[name] = obj
     def set_scope_name(self, name):
         self.name = name
     def contains(self, name):
         return name in self.dict
-    # TODO: IMPROV: create an "retrieve_docs" procedure to find documentation
+    # TODO: IMPROVE: create an "retrieve_docs" procedure to find documentation
     def retrieve(self, name):
         if name in self.dict:
             return Result(self.dict[name], None)
@@ -180,7 +180,7 @@ def apply_user(ctx, f, args):
 def apply_intrinsic(ctx, f, args):
     return f.wrapper(ctx, args)
 
-# TODO: IMPROV: ensure lists are not improper before call, provide a procedure that doesn't check that (for use in eval)
+# TODO: IMPROVE: ensure lists are not improper before call, provide a procedure that doesn't check that (for use in eval)
 def apply(ctx, f, args):
     if type(args) != List:
         msg = "expected list of arguments, instead got: " +args.__str__()
@@ -194,6 +194,39 @@ def apply(ctx, f, args):
         err = ctx.error("symbol is not callable", None)
         return Result(None, err)
 
+def _eval_unquoted(ctx, list):
+    builder = ListBuilder()
+    curr = list
+    while curr != nil:
+        if type(curr) is List:
+            if type(curr.head) is List:
+                head = curr.head
+                if type(head.head) is Symbol and head.head.symbol == "form-unquote":
+                    res = eval(ctx, head.tail.head)
+                    if res.failed():
+                        return res
+                    builder.append_item(res.value)
+                elif type(head.head) is Symbol and head.head.symbol == "form-splice":
+                    res = eval(ctx, head.tail.head)
+                    if res.failed():
+                        return res
+                    if type(res.value) != List:
+                        err = ctx.error("form-splice used with non-list", head.tail.range)
+                        return Result(None, err)
+                    builder.append_list(res.value)
+                else:
+                    res = _eval_unquoted(ctx, head)
+                    if res.failed():
+                        return res
+                    builder.append_item(res.value)
+            else:
+                builder.append_item(curr.head)
+            curr = curr.tail
+        else:
+            builder.append_end(curr)
+            curr = nil
+    return Result(builder.valid_list(), None)
+
 def eval(ctx, expr):
     if type(expr) is List:
         res = eval(ctx, expr.head)
@@ -201,9 +234,13 @@ def eval(ctx, expr):
             return improve(res, expr)
         head = res.value
         args = expr.tail
-        # TODO: FEAT: allow unquote (,) to evaluate expressions in Forms
         if type(head) in [Function, Intrinsic_Function]:
             res = eval_each(ctx, expr.tail)
+            if res.failed():
+                return improve(res, expr)
+            args = res.value
+        elif type(head) in [Form, Intrinsic_Form]:
+            res = _eval_unquoted(ctx, expr.tail)
             if res.failed():
                 return improve(res, expr)
             args = res.value

@@ -12,15 +12,15 @@ def core_symbols(scope):
 
     add_form(scope, "function", function_wrapper)
     add_form(scope, "form",     form_wrapper)
-    # TODO: IMPROV: allow 'let' to include optional documentation
+    # TODO: IMPROVE: allow 'let' to include optional documentation
     add_form(scope, "let",      let_wrapper)
     add_form(scope, "if",       if_wrapper)
     add_form(scope, "begin",    begin_wrapper)
     add_form(scope, "quote",    quote_wrapper)
     # TODO: FEAT: 'help' special form for documentation
-    # TODO: THINK: should we have a module system like Python? If so shouldn't it be a combination of "namespace" and "load"?
     add_form(scope, "or",  or_wrapper)
     add_form(scope, "and", and_wrapper)
+    # TODO: FEAT: 'case' special form (same as "cond" in other lisps)
 
     add_function(scope, "string?",   pred_string_wrapper)
     add_function(scope, "number?",   pred_number_wrapper)
@@ -79,6 +79,7 @@ def core_symbols(scope):
     add_function(scope, "unique",  unique_wrapper)
     add_function(scope, "sort",    sort_wrapper)
     add_function(scope, "range",   range_wrapper)
+    # TODO: FEAT: body (function/form -> list) returns the body of a function or form
     # TODO: THINK: we need a procedure like "lookup" to optimize list lookups to be O(1) with a hashmap in the future
 
     add_function(scope, "concatenate",   concatenate_wrapper)
@@ -1193,7 +1194,7 @@ def abort_wrapper(ctx, list):
     str = _strargs(list)
     if str == "":
         str = "program aborted"
-    err = ctx.error(str, None)
+    err = ctx.error(str, list.range)
     return Result(None, err)
 
 ### INTRINSIC FORMS
@@ -1246,22 +1247,30 @@ def form_wrapper(ctx, list):
     return Result(f, None)
 
 def _eval_unquoted(ctx, list):
-    if (type(list.head) is Symbol and
-        list.head.symbol == "unquote"):
-        res = eval(ctx, list.tail.head)
-        if res.failed():
-            return res
-        return res
-
     builder = ListBuilder()
     curr = list
     while curr != nil:
         if type(curr) is List:
             if type(curr.head) is List:
-                res = _eval_unquoted(ctx, curr.head)
-                if res.failed():
-                    return res
-                builder.append_item(res.value)
+                head = curr.head
+                if type(head.head) is Symbol and head.head.symbol == "unquote":
+                    res = eval(ctx, head.tail.head)
+                    if res.failed():
+                        return res
+                    builder.append_item(res.value)
+                elif type(head.head) is Symbol and head.head.symbol == "splice":
+                    res = eval(ctx, head.tail.head)
+                    if res.failed():
+                        return res
+                    if type(res.value) != List:
+                        err = ctx.error("splice used with non-list", head.tail.range)
+                        return Result(None, err)
+                    builder.append_list(res.value)
+                else:
+                    res = _eval_unquoted(ctx, head)
+                    if res.failed():
+                        return res
+                    builder.append_item(res.value)
             else:
                 builder.append_item(curr.head)
             curr = curr.tail
@@ -1270,8 +1279,6 @@ def _eval_unquoted(ctx, list):
             curr = nil
     return Result(builder.valid_list(), None)
 
-# TODO: FEAT: implement unquote-splicing as "splice"
-# quasiquote expr
 def quote_wrapper(ctx, list):
     res = check_num_args(ctx, list, 1)
     if res.failed():
