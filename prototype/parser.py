@@ -397,8 +397,6 @@ def _grain(parser):
         out = Symbol("splice")
     elif parser.word_is(lexkind.SEMICOLON):
         out = Symbol("form-unquote")
-    elif parser.word_is(lexkind.AMPERSAND):
-        out = Symbol("form-splice")
     else:
         return Result(None, None)
     res = parser.consume()

@@ -1,0 +1,46 @@
+let divisible?
+  function [a b]
+    = [remainder a b] 0
+
+let fizzer
+  function [x]
+    case
+      [and [divisible? x 3] [divisible? x 5]] "FizzBuzz"
+      [divisible? x 3] "Fizz"
+      [divisible? x 5] "Buzz"
+      true             x
+
+let a
+  map
+    fizzer
+    range 10
+
+let b
+  list "FizzBuzz" \
+       1      2 "Fizz" 4      "Buzz" \
+       "Fizz" 7 8      "Fizz"
+
+if [not= a b]
+   abort "fail 1" a b
+   nil
+
+let f
+  function x
+    case
+      [= x 1] "a"
+      [= x 2] "b"
+if
+   not= [f 1] "a"
+   abort "fail 2"
+   nil
+if
+   not= [f 2] "b"
+   abort "fail 3"
+   nil
+# if every case fails it returns nil
+if
+   not= [f 3] nil
+   abort "fail 4"
+   nil
+
+print "case.guira: OK"

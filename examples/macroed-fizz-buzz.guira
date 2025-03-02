@@ -1,0 +1,42 @@
+let macro
+  form [name vars . exprs]
+   'let ,name
+     form ,vars
+      begin @exprs
+
+!macro fun[name vars . exprs]
+  'let ,name
+    function ,vars
+      begin @exprs
+
+!fun compose[a b]
+  function x
+    a:b:x
+
+let first head
+let second [compose head tail]
+
+!macro cond[a . ls]
+  'if
+    ,[first a]
+    ,[second a]
+    ,begin
+      if nil?:ls
+        'nil
+        apply cond ls
+let else true
+
+!fun divisible?[x q]
+  = [remainder x q] 0
+
+!fun fizzer[x]
+  !cond
+    [and [divisible? x 3] [divisible? x 5]]
+      "FizzBuzz"
+    [divisible? x 3] "Fizz"
+    [divisible? x 5] "Buzz"
+    else             x
+
+for
+  compose print fizzer
+  range 10000

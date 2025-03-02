@@ -17,10 +17,11 @@ if
   abort "fail 2"
   nil
 
+# form-unquote is shallow
 if
   not=
-    multi-quote 1 ;[+ 1 1] ;[+ 1 1 1] '[1 2 3 ;[+ 3 1]]
-    '[1 2 3 '[1 2 3 4]]
+    multi-quote 1 ;[+ 1 1] ;[+ 1 1 1] '[1 2 ;3]
+    '[1 2 3 '[1 2 [form-unquote 3]]]
   abort "fail 3"
   nil
 

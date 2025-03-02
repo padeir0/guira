@@ -160,9 +160,6 @@ class Lexer:
         elif r == ";":
             self._next_rune()
             return self._emit(lexkind.SEMICOLON)
-        elif r == "&":
-            self._next_rune()
-            return self._emit(lexkind.AMPERSAND)
         elif r == "":
             return Lexeme("", lexkind.EOF, self.range.copy())
         else:

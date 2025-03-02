@@ -1,0 +1,22 @@
+let a
+  range 100
+
+let compose
+  function [f g]
+    function x
+      f:g:x
+
+let partition
+  function [f ls]
+    pair
+      filter f ls
+      pair 
+        filter [compose not f] ls
+        nil
+
+let b
+  partition even? a
+
+print a
+print head:b
+print head:tail:b

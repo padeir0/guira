@@ -304,6 +304,17 @@ class List:
     def __le__(self, other):
         return self == other or self < other
 
+def is_proper(ls):
+    if ls == nil:
+        return True
+    if type(ls) != List:
+        return False
+    last = ls.last()
+    return last.tail == nil
+
+def is_improper(ls):
+    return not is_proper(ls)
+
 # identifiers
 class Symbol:
     def __init__(self, symbol):

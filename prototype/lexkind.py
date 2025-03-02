@@ -19,7 +19,6 @@ BANG      = 11
 COMMA     = 12
 AT        = 13
 SEMICOLON = 14
-AMPERSAND = 15
 
 def to_string(kind):
     if kind == INVALID:
@@ -59,7 +58,5 @@ def to_string(kind):
         return "AT"
     elif kind == SEMICOLON:
         return "SEMICOLON"
-    elif kind == AMPERSAND:
-        return "AMPERSAND"
     
     return "??"

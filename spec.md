@@ -85,28 +85,49 @@ that is: arguments are implicitly quoted. Here's an example:
 
 ```
 let my-quote
-  form [a] a
+  form [a . b] 
+    pair a b
 ```
 
-This form has the same behaviour of `quote`, except that to `unquote` and `splice` things
-you need to use `form-unquote` and `form-splice`, respectivelly.
-
-```
-print
-  my-quote
-    list 1 2
-      form-unquote [+ 1 2]
-      form-unquote [+ 2 3]
-```
-
-This prints `[list 1 2 3 5]`. There is syntax sugar for `form-unquote` and `form-splice`,
-they are `;` and `&` respectivelly, so that the above code can be shortened:
+This form behaves similar to `quote`,
+except that it always returns a list, and can receive multiple arguments.
+Another difference is that it only permits _shallow_ unquoting
+by using `form-unquote`.
 
 ```
 print
-  my-quote
-    list 1 2 ;[+ 1 2] ;[+ 2 3]
+  my-quote 1 2 \
+    form-unquote [+ 1 2]
+    form-unquote [+ 2 3]
 ```
+
+This prints `[1 2 3 5]`. There is syntax sugar for `form-unquote`,
+which is `;`. So that the above code can be shortened:
+
+```
+print
+  my-quote 1 2 ;[+ 1 2] ;[+ 2 3]
+```
+
+By being _shallow_ we mean that:
+
+```
+print
+  my-quote 1 2
+    + ;1 ;2
+```
+
+Will print `[1 2 [+ ;1 ;2]]`, this is so that we can use `form-unquote`
+inside nested forms. If it were not shallow, the following code
+would not work:
+
+```
+let f
+  function[x]
+    my-quote 1 ;[+ 1 x]
+```
+
+As `let` would try to evaluate `;[+ 1 x]` without knowing about `x`.
 
 If a form returns code, you can evaluate it with `eval`.
 
@@ -171,7 +192,7 @@ NL = '\n' {'\n'}.
 Atom = id | num | str.
 
 sugar = {grain}.
-grain = '!' | "'" | ',' | '@' | ';' | '&'.
+grain = '!' | "'" | ',' | '@' | ';'.
 str = /"[\u0000-\uFFFF]*"/.
 
 id = ident_begin {ident_continue}.

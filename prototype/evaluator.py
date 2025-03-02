@@ -114,10 +114,8 @@ def eval_each(ctx, list):
                 rng = curr.range
                 curr = curr.tail
             else:
-                res = eval(ctx, curr)
-                if res.failed():
-                    return res
-                curr = nil
+                err = ctx.error("expected proper list", list.range)
+                return Result(None, err)
             # we try to keep range information
             l = List(res.value, nil)
             l.range = rng
@@ -180,8 +178,14 @@ def apply_user(ctx, f, args):
 def apply_intrinsic(ctx, f, args):
     return f.wrapper(ctx, args)
 
-# TODO: IMPROVE: ensure lists are not improper before call, provide a procedure that doesn't check that (for use in eval)
 def apply(ctx, f, args):
+    if is_improper(args):
+        msg = "expected proper list of arguments, instead got: " +args.__str__()
+        err = ctx.error(msg, None)
+        return Result(None, err)
+    return _apply(ctx, f, args)
+
+def _apply(ctx, f, args):
     if type(args) != List:
         msg = "expected list of arguments, instead got: " +args.__str__()
         err = ctx.error(msg, None)
@@ -199,32 +203,19 @@ def _eval_unquoted(ctx, list):
     curr = list
     while curr != nil:
         if type(curr) is List:
-            if type(curr.head) is List:
-                head = curr.head
-                if type(head.head) is Symbol and head.head.symbol == "form-unquote":
+            head = curr.head
+            if (type(head) is List and
+                type(head.head) is Symbol and
+                head.head.symbol == "form-unquote"):
                     res = eval(ctx, head.tail.head)
                     if res.failed():
                         return res
-                    builder.append_item(res.value)
-                elif type(head.head) is Symbol and head.head.symbol == "form-splice":
-                    res = eval(ctx, head.tail.head)
-                    if res.failed():
-                        return res
-                    if type(res.value) != List:
-                        err = ctx.error("form-splice used with non-list", head.tail.range)
-                        return Result(None, err)
-                    builder.append_list(res.value)
-                else:
-                    res = _eval_unquoted(ctx, head)
-                    if res.failed():
-                        return res
-                    builder.append_item(res.value)
-            else:
-                builder.append_item(curr.head)
+                    head = res.value
+            builder.append_item(head)
             curr = curr.tail
         else:
-            builder.append_end(curr)
-            curr = nil
+            err = ctx.error("expected proper list", list.range)
+            return Result(None, err)
     return Result(builder.valid_list(), None)
 
 def eval(ctx, expr):
@@ -245,7 +236,7 @@ def eval(ctx, expr):
                 return improve(res, expr)
             args = res.value
 
-        res = apply(ctx, head, args)
+        res = _apply(ctx, head, args)
         if res.failed():
             return improve(res, expr)
         return res
