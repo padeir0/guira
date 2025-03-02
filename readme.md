@@ -1,11 +1,16 @@
 # Guira
 
 Guira is a pure, self-documenting Lisp with lightweight syntax and first-class macros.
-It's still in prototyping phase, and the "self-documenting" part is yet not implemented.
 Here's a hello-world program:
 
 ```
 print "Hello, World!"
+```
+
+To start learning the language, simply type:
+
+```
+[help]
 ```
 
 Here's a program that naively computes the prime numbers between
