@@ -1,0 +1,24 @@
+let square
+  function x
+    [* x x]
+
+if
+  not= body:square
+       '[* x x]
+  abort "fail 1"
+  nil
+if
+  not= args:square
+       '[x]
+  abort "fail 2" args:square
+  nil
+
+let x 2
+if
+  not=
+    !body:square
+    4
+  abort "fail 3"
+  nil
+
+print "args_body.guira: OK"

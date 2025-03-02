@@ -4,110 +4,110 @@ from util import is_valid_identifier, is_valid_number, convert_number, string_to
 from fractions import Fraction
 from decimal import Decimal
 import scopekind
+import docs
 
 def core_symbols(scope):
-    scope.add_symbol("nil",   nil)
-    scope.add_symbol("true",  true)
-    scope.add_symbol("false", false)
+    add_value(scope, "nil",   nil,   docs._nil)
+    add_value(scope, "true",  true,  docs._true)
+    add_value(scope, "false", false, docs._false)
 
-    add_form(scope, "function", function_wrapper)
-    add_form(scope, "form",     form_wrapper)
-    # TODO: IMPROVE: allow 'let' to include optional documentation
-    add_form(scope, "let",      let_wrapper)
-    add_form(scope, "if",       if_wrapper)
-    add_form(scope, "case",     case_wrapper)
-    add_form(scope, "begin",    begin_wrapper)
-    add_form(scope, "quote",    quote_wrapper)
-    # TODO: FEAT: 'help' special form for documentation
-    add_form(scope, "or",  or_wrapper)
-    add_form(scope, "and", and_wrapper)
+    add_form(scope, "function", function_wrapper, docs._function)
+    add_form(scope, "form",     form_wrapper,     docs._form)
+    add_form(scope, "let",      let_wrapper,      docs._let)
+    add_form(scope, "if",       if_wrapper,       docs._if)
+    add_form(scope, "case",     case_wrapper,     docs._case)
+    add_form(scope, "begin",    begin_wrapper,    docs._begin)
+    add_form(scope, "quote",    quote_wrapper,    docs._quote)
+    add_form(scope, "help",     help_wrapper,     docs._help)
 
-    add_function(scope, "string?",   pred_string_wrapper)
-    add_function(scope, "number?",   pred_number_wrapper)
-    add_function(scope, "list?",     pred_list_wrapper)
-    add_function(scope, "atom?",     pred_atom_wrapper)
-    add_function(scope, "symbol?",   pred_symbol_wrapper)
-    add_function(scope, "function?", pred_function_wrapper)
-    add_function(scope, "form?",     pred_form_wrapper)
-    add_function(scope, "nil?",      pred_nil_wrapper)
+    add_form(scope, "or",  or_wrapper,  docs._or)
+    add_form(scope, "and", and_wrapper, docs._and)
 
-    add_function(scope, "exact?",    pred_exact_wrapper)
-    add_function(scope, "inexact?",  pred_inexact_wrapper)
-    add_function(scope, "proper?",   pred_proper_wrapper)
-    add_function(scope, "improper?", pred_improper_wrapper)
+    add_function(scope, "string?",   pred_string_wrapper,   docs._pred_string)
+    add_function(scope, "number?",   pred_number_wrapper,   docs._pred_number)
+    add_function(scope, "list?",     pred_list_wrapper,     docs._pred_list)
+    add_function(scope, "atom?",     pred_atom_wrapper,     docs._pred_atom)
+    add_function(scope, "symbol?",   pred_symbol_wrapper,   docs._pred_symbol)
+    add_function(scope, "function?", pred_function_wrapper, docs._pred_function)
+    add_function(scope, "form?",     pred_form_wrapper,     docs._pred_form)
+    add_function(scope, "nil?",      pred_nil_wrapper,      docs._pred_nil)
 
-    add_function(scope, "to-string",  to_string_wrapper)
-    add_function(scope, "to-symbol",  to_symbol_wrapper)
-    add_function(scope, "to-number",  to_number_wrapper)
-    add_function(scope, "to-list",    to_list_wrapper)
+    add_function(scope, "exact?",    pred_exact_wrapper,    docs._pred_exact)
+    add_function(scope, "inexact?",  pred_inexact_wrapper,  docs._pred_inexact)
+    add_function(scope, "proper?",   pred_proper_wrapper,   docs._pred_proper)
+    add_function(scope, "improper?", pred_improper_wrapper, docs._pred_improper)
 
-    add_function(scope, "to-exact",   to_exact_wrapper)
-    add_function(scope, "to-inexact", to_inexact_wrapper)
-    add_function(scope, "max-precision", max_precision_wrapper)
-    add_function(scope, "numerator", numerator_wrapper)
-    add_function(scope, "denominator", denominator_wrapper)
+    add_function(scope, "to-string",  to_string_wrapper, docs._to_string)
+    add_function(scope, "to-symbol",  to_symbol_wrapper, docs._to_symbol)
+    add_function(scope, "to-number",  to_number_wrapper, docs._to_number)
+    add_function(scope, "to-list",    to_list_wrapper,   docs._to_list)
 
-    add_function(scope, "not",  not_wrapper)
+    add_function(scope, "to-exact",   to_exact_wrapper,         docs._to_exact)
+    add_function(scope, "to-inexact", to_inexact_wrapper,       docs._to_inexact)
+    add_function(scope, "max-precision", max_precision_wrapper, docs._max_precision)
+    add_function(scope, "numerator", numerator_wrapper,         docs._numerator)
+    add_function(scope, "denominator", denominator_wrapper,     docs._denominator)
 
-    add_function(scope, "=",  eq_wrapper)
-    add_function(scope, "not=", neq_wrapper)
-    add_function(scope, "<",  less_wrapper)
-    add_function(scope, ">",  greater_wrapper)
-    add_function(scope, "<=", less_eq_wrapper)
-    add_function(scope, ">=", greater_eq_wrapper)
+    add_function(scope, "not",  not_wrapper, docs._not)
 
-    add_function(scope, "+", sum_wrapper)
-    add_function(scope, "-", minus_wrapper)
-    add_function(scope, "*", mult_wrapper)
-    add_function(scope, "/", div_wrapper)
-    add_function(scope, "remainder", remainder_wrapper)
-    add_function(scope, "even?",     even_wrapper)
-    add_function(scope, "odd?",      odd_wrapper)
+    add_function(scope, "=",  eq_wrapper,         docs._eq)
+    add_function(scope, "not=", neq_wrapper,      docs._neq)
+    add_function(scope, "<",  less_wrapper,       docs._less)
+    add_function(scope, ">",  greater_wrapper,    docs._greater)
+    add_function(scope, "<=", less_eq_wrapper,    docs._less_eq)
+    add_function(scope, ">=", greater_eq_wrapper, docs._greater_eq)
 
-    add_function(scope, "pair",    pair_wrapper)
-    add_function(scope, "head",    head_wrapper)
-    add_function(scope, "tail",    tail_wrapper)
-    add_function(scope, "list",    list_wrapper)
-    add_function(scope, "length",  length_wrapper)
-    add_function(scope, "last",    last_wrapper)
-    add_function(scope, "append",  append_wrapper)
-    add_function(scope, "reverse", reverse_wrapper)
-    add_function(scope, "for",     for_wrapper)
-    add_function(scope, "map",     map_wrapper)
-    add_function(scope, "filter",  filter_wrapper)
-    add_function(scope, "fold",    fold_wrapper)
-    add_function(scope, "unique",  unique_wrapper)
-    add_function(scope, "sort",    sort_wrapper)
-    add_function(scope, "range",   range_wrapper)
-    # TODO: FEAT: args (function/form -> list) returns the argument names of a function or form
-    # TODO: FEAT: body (function/form -> list) returns the body of a function or form
+    add_function(scope, "+", sum_wrapper,   docs._sum)
+    add_function(scope, "-", minus_wrapper, docs._minus)
+    add_function(scope, "*", mult_wrapper,  docs._mult)
+    add_function(scope, "/", div_wrapper,   docs._div)
+    add_function(scope, "remainder", remainder_wrapper, docs._remainder)
+    add_function(scope, "even?",     even_wrapper,      docs._even)
+    add_function(scope, "odd?",      odd_wrapper,       docs._odd)
+
+    add_function(scope, "pair",    pair_wrapper,    docs._pair)
+    add_function(scope, "head",    head_wrapper,    docs._head)
+    add_function(scope, "tail",    tail_wrapper,    docs._tail)
+    add_function(scope, "list",    list_wrapper,    docs._list)
+    add_function(scope, "length",  length_wrapper,  docs._length)
+    add_function(scope, "last",    last_wrapper,    docs._last)
+    add_function(scope, "append",  append_wrapper,  docs._append)
+    add_function(scope, "reverse", reverse_wrapper, docs._reverse)
+    add_function(scope, "for",     for_wrapper,     docs._for)
+    add_function(scope, "map",     map_wrapper,     docs._map)
+    add_function(scope, "filter",  filter_wrapper,  docs._filter)
+    add_function(scope, "fold",    fold_wrapper,    docs._fold)
+    add_function(scope, "unique",  unique_wrapper,  docs._unique)
+    add_function(scope, "sort",    sort_wrapper,    docs._sort)
+    add_function(scope, "range",   range_wrapper,   docs._range)
+    add_function(scope, "args",    args_wrapper,    docs._args)
+    add_function(scope, "body",    body_wrapper,    docs._body)
     # TODO: THINK: we need a procedure like "lookup" to optimize list lookups to be O(1) with a hashmap in the future
 
-    add_function(scope, "concatenate",   concatenate_wrapper)
-    add_function(scope, "slice",         slice_wrapper)
-    add_function(scope, "string-length", string_length_wrapper)
-    add_function(scope, "split",         split_wrapper)
-    add_function(scope, "join",          join_wrapper)
-    # (follow go formatting rules)
-    # %v %#v %T %%
-    # %n %.6n %s %t %l
-    # TODO: FEAT: format         string . any -> string
+    add_function(scope, "concatenate",   concatenate_wrapper,   docs._concatenate)
+    add_function(scope, "slice",         slice_wrapper,         docs._slice)
+    add_function(scope, "string-length", string_length_wrapper, docs._string_length)
+    add_function(scope, "split",         split_wrapper,         docs._split)
+    add_function(scope, "join",          join_wrapper,          docs._join)
 
-    add_function(scope, "eval",  eval_wrapper)
-    add_function(scope, "apply",  apply_wrapper)
+    add_function(scope, "eval",  eval_wrapper,   docs._eval)
+    add_function(scope, "apply",  apply_wrapper, docs._apply)
 
-    add_function(scope, "print", print_wrapper)
-    add_function(scope, "abort", abort_wrapper)
+    add_function(scope, "print", print_wrapper, docs._print)
+    add_function(scope, "abort", abort_wrapper, docs._abort)
     return
 
 ### UTILS
-def add_function(scope, name, wrapper):
+def add_function(scope, name, wrapper, docs):
     _temp = Intrinsic_Function(name, wrapper)
-    scope.add_symbol(name, _temp)
+    scope.add_symbol(name, _temp, docs)
 
-def add_form(scope, name, wrapper):
+def add_form(scope, name, wrapper, docs):
     _temp = Intrinsic_Form(name, wrapper)
-    scope.add_symbol(name, _temp)
+    scope.add_symbol(name, _temp, docs)
+
+def add_value(scope, name, value, docs):
+    scope.add_symbol(name, value, docs)
 
 def _strargs(list):
     curr = list
@@ -196,11 +196,12 @@ def expect_integer(ctx, pair):
         return Result(None, err)
     return Result(None, None)
 
-def expect(ctx, pair, t):
-    if type(pair.head) != t:
-        err = ctx.error(f"expected {t}", pair.range)
-        return Result(None, err)
-    return Result(None, None)
+def expect(ctx, pair, *types):
+    for t in types:
+        if type(pair.head) == t:
+            return Result(None, None)
+    err = ctx.error(f"expected one of {types}", pair.range)
+    return Result(None, err)
 
 def predicate(ctx, list, kinds):
     res = check_num_args(ctx, list, 1)
@@ -1148,19 +1149,6 @@ def join_wrapper(ctx, ls):
     out = String(s)
     return Result(out, None)
 
-### SIDE-EFFECTS
-
-def print_wrapper(ctx, list):
-    print(_strargs(list))
-    return Result(nil, None)
-
-def abort_wrapper(ctx, list):
-    str = _strargs(list)
-    if str == "":
-        str = "program aborted"
-    err = ctx.error(str, list.range)
-    return Result(None, err)
-
 ### INTRINSIC FORMS
 
 def if_wrapper(ctx, list):
@@ -1279,16 +1267,17 @@ def quote_wrapper(ctx, list):
     return Result(head, None)
 
 def let_wrapper(ctx, list):
-    res = check_num_args(ctx, list, 2)
+    res = check_num_args_between(ctx, list, 2, 3)
+    if res.failed():
+        return res
+
+    res = expect(ctx, list, Symbol)
     if res.failed():
         return res
 
     id_expr = list.head
     value_expr = list.tail.head
 
-    if type(id_expr) != Symbol:
-        err = ctx.error("expected symbol", None)
-        return Result(None, err)
     name = id_expr.symbol
 
     res = eval(ctx, value_expr)
@@ -1300,7 +1289,18 @@ def let_wrapper(ctx, list):
         err = ctx.error("name already defined", None)
         return Result(None, err)
 
-    ctx.add_symbol(name, value)
+    doc = "no help provided"
+    if list.tail.tail != nil:
+        third = list.tail.tail
+        res = eval(ctx, third.head)
+        if res.failed():
+            return res
+        if type(res.value) != String:
+            err = ctx.error("documentation must be a string", third.range)
+            return Result(None, err)
+        doc = res.value.string
+
+    ctx.add_symbol(name, value, doc)
     return Result(nil, None)
 
 def begin_wrapper(ctx, list):
@@ -1320,6 +1320,36 @@ def begin_wrapper(ctx, list):
 
     return Result(out, None)
 
+def help_wrapper(ctx, list):
+    if list == nil:
+        print(docs._help)
+        return Result(nil, None)
+
+    curr = list
+    while curr != nil:
+        head = curr.head
+        if type(head) is Symbol:
+            res = ctx.retrieve_docs(head.symbol)
+            if res.failed():
+                err = ctx.error("symbol not found", curr.range)
+                return Result(None, err)
+            print(res.value + "\n")
+        elif type(head) is String:
+            str = head.string 
+            if str in docs._extra_docs:
+               print(docs._extra_docs[str])
+            else:
+                err = ctx.error("documentation not found", curr.range)
+                return Result(None, err)
+        else:
+            err = ctx.error("help expects either symbols or strings", curr.range)
+            return Result(None, err)
+        curr = curr.tail
+
+    return Result(nil, None)
+
+### EVAL APPLY
+
 def eval_wrapper(ctx, list):
     res = check_num_args(ctx, list, 1)
     if res.failed():
@@ -1333,3 +1363,40 @@ def apply_wrapper(ctx, list):
     f = list.head
     args = list.tail.head
     return apply(ctx, f, args)
+
+### SIDE-EFFECTS
+
+def print_wrapper(ctx, list):
+    print(_strargs(list))
+    return Result(nil, None)
+
+def abort_wrapper(ctx, list):
+    str = _strargs(list)
+    if str == "":
+        str = "program aborted"
+    err = ctx.error(str, list.range)
+    return Result(None, err)
+
+### BODY ARGS
+
+def args_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+    res = expect(ctx, list, Function, Form)
+    if res.failed():
+        return res
+
+    out = list.head.formal_args
+    return Result(out, None)
+
+def body_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+    res = expect(ctx, list, Function, Form)
+    if res.failed():
+        return res
+
+    out = list.head.body
+    return Result(out, None)

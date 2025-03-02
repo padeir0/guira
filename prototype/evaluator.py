@@ -7,14 +7,23 @@ class Scope:
         self.parent = parent
         self.name = ""
         self.dict = {}
-    # TODO: IMPROVE: allow "add_symbol" to attach documentation in a separate dictionary
-    def add_symbol(self, name, obj):
+        self.docs = {}
+    def add_symbol(self, name, obj, docs):
+        if type(docs) != str:
+            raise Exception("internal: docs were not strings")
         self.dict[name] = obj
+        self.docs[name] = docs
     def set_scope_name(self, name):
         self.name = name
     def contains(self, name):
         return name in self.dict
-    # TODO: IMPROVE: create an "retrieve_docs" procedure to find documentation
+    def retrieve_docs(self, name):
+        if name in self.docs:
+            return Result(self.docs[name], None)
+        elif self.parent != None:
+            return self.parent.retrieve_docs(name)
+        else:
+            return Result(None, True)
     def retrieve(self, name):
         if name in self.dict:
             return Result(self.dict[name], None)
@@ -78,8 +87,11 @@ class Context:
     def retrieve(self, name):
         return self.curr_call_node.curr_scope.retrieve(name)
 
-    def add_symbol(self, name, obj):
-        self.curr_call_node.curr_scope.add_symbol(name, obj)
+    def retrieve_docs(self, name):
+        return self.curr_call_node.curr_scope.retrieve_docs(name)
+
+    def add_symbol(self, name, obj, docs):
+        self.curr_call_node.curr_scope.add_symbol(name, obj, docs)
 
     def set_mod(self, mod_name, mod):
         self.evaluated_mods[mod_name] = mod
@@ -152,7 +164,7 @@ def apply_user(ctx, f, args):
         if type(curr_arg) is List and type(curr_formal_arg) is List:
             name = curr_formal_arg.head.symbol
             obj = curr_arg.head
-            ctx.add_symbol(name, obj)
+            ctx.add_symbol(name, obj, "formal argument")
             curr_formal_arg = curr_formal_arg.tail
             curr_arg = curr_arg.tail
         else:
@@ -169,7 +181,7 @@ def apply_user(ctx, f, args):
 
     # variadic arguments
     if type(curr_formal_arg) is Symbol:
-        ctx.add_symbol(curr_formal_arg.symbol, curr_arg)
+        ctx.add_symbol(curr_formal_arg.symbol, curr_arg, "variadic argument")
 
     res = eval(ctx, f.body)
     ctx.pop_env()
@@ -186,10 +198,6 @@ def apply(ctx, f, args):
     return _apply(ctx, f, args)
 
 def _apply(ctx, f, args):
-    if type(args) != List:
-        msg = "expected list of arguments, instead got: " +args.__str__()
-        err = ctx.error(msg, None)
-        return Result(None, err)
     if type(f) in [Intrinsic_Form, Intrinsic_Function]:
         return apply_intrinsic(ctx, f, args)
     elif type(f) in [Form, Function]:
