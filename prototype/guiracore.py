@@ -200,7 +200,10 @@ def expect(ctx, pair, *types):
     for t in types:
         if type(pair.head) == t:
             return Result(None, None)
-    err = ctx.error(f"expected one of {types}", pair.range)
+    str = ""
+    for t in types:
+        str += getattr(t, '__name__')
+    err = ctx.error(f"expected one of {str}", pair.range)
     return Result(None, err)
 
 def predicate(ctx, list, kinds):

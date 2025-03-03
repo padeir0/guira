@@ -18,7 +18,6 @@ QUOTE     = 10
 BANG      = 11
 COMMA     = 12
 AT        = 13
-SEMICOLON = 14
 
 def to_string(kind):
     if kind == INVALID:
@@ -56,7 +55,5 @@ def to_string(kind):
         return "COMMA"
     elif kind == AT:
         return "AT"
-    elif kind == SEMICOLON:
-        return "SEMICOLON"
     
     return "??"

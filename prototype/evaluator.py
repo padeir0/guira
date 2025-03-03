@@ -214,7 +214,7 @@ def _eval_unquoted(ctx, list):
             head = curr.head
             if (type(head) is List and
                 type(head.head) is Symbol and
-                head.head.symbol == "form-unquote"):
+                head.head.symbol == "unquote"):
                     res = eval(ctx, head.tail.head)
                     if res.failed():
                         return res

@@ -192,7 +192,7 @@ NL = '\n' {'\n'}.
 Atom = id | num | str.
 
 sugar = {grain}.
-grain = '!' | "'" | ',' | '@' | ';'.
+grain = '!' | "'" | ',' | '@'.
 str = /"[\u0000-\uFFFF]*"/.
 
 id = ident_begin {ident_continue}.

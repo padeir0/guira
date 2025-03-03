@@ -157,9 +157,6 @@ class Lexer:
         elif r == "@":
             self._next_rune()
             return self._emit(lexkind.AT)
-        elif r == ";":
-            self._next_rune()
-            return self._emit(lexkind.SEMICOLON)
         elif r == "":
             return Lexeme("", lexkind.EOF, self.range.copy())
         else:
