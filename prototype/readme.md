@@ -2,6 +2,16 @@
 
 Prototype of guira-core to test and improve on language features.
 
+Run a Guira file with:
+```bash
+./cli file.guira
+```
+
+Run the test suite with:
+```bash
+./cli test ../suite
+```
+
 ## guira-core
 
 Here are the names of functions, forms and values
@@ -44,7 +54,7 @@ pair   head tail   last   list length
 append map  filter fold   for  reverse
 range  sort unique
 
-join concatenate format slice
+join concatenate slice
 split string-length
 
 eval apply

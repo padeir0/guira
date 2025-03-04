@@ -1,0 +1,27 @@
+let fun-id
+  function x x
+let form-id
+  form x x
+
+print
+  fun-id [+ 1 1]
+  fun-id '[+ 1 1]
+print
+  form-id [+ 1 1]
+  form-id ,[+ 1 1]
+
+let fun
+  form [name args . exprs]
+    'let ,name
+      function ,args
+        begin @exprs
+
+!fun gcd[a b]
+  if [= b 0]
+     a
+     gcd b [remainder a b]
+
+print
+  map
+    function x [gcd 6 x]
+    range 100
