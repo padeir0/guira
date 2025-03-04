@@ -10,9 +10,8 @@ defined in guira-core.
 ### Intrinsic Forms
 
 ```
-function form let if  begin
-quote    or   and import
-help
+function form let if case begin
+quote    or   and help
 ```
 
 ### Intrinsic Values
@@ -36,7 +35,7 @@ numerator denominator
 
 not
 
-= != < > <= >=
+= not= < > <= >=
 
 + - * /
 remainder even? odd?
@@ -48,7 +47,9 @@ range  sort unique
 join concatenate format slice
 split string-length
 
-evaluate apply
+eval apply
 
 print abort
+
+body args
 ```

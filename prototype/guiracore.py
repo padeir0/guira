@@ -1325,10 +1325,11 @@ def begin_wrapper(ctx, list):
 
 def help_wrapper(ctx, list):
     if list == nil:
-        print(docs._help)
-        return Result(nil, None)
+        out = String(docs._help)
+        return Result(out, None)
 
     curr = list
+    out = ""
     while curr != nil:
         head = curr.head
         if type(head) is Symbol:
@@ -1336,11 +1337,11 @@ def help_wrapper(ctx, list):
             if res.failed():
                 err = ctx.error("symbol not found", curr.range)
                 return Result(None, err)
-            print(res.value + "\n")
+            out += res.value + "\n"
         elif type(head) is String:
             str = head.string 
             if str in docs._extra_docs:
-               print(docs._extra_docs[str])
+               out += docs._extra_docs[str] + "\n"
             else:
                 err = ctx.error("documentation not found", curr.range)
                 return Result(None, err)
@@ -1349,7 +1350,7 @@ def help_wrapper(ctx, list):
             return Result(None, err)
         curr = curr.tail
 
-    return Result(nil, None)
+    return Result(String(out), None)
 
 ### EVAL APPLY
 

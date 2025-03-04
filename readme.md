@@ -7,10 +7,11 @@ Here's a hello-world program:
 print "Hello, World!"
 ```
 
-To start learning the language, simply type:
+Documentation is included with the language, although not 
+everything is documented at the moment.
 
 ```
-[help]
+print [help]
 ```
 
 Here's a program that naively computes the prime numbers between
