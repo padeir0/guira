@@ -1,0 +1,181 @@
+let macro
+  form [name args docstring . exprs]
+    if not:string?:docstring
+       abort "docstring argument for _macro_ was not a string"
+       'let ,name
+         form ,args
+           begin @exprs
+         ,docstring
+  "macro for defining other macros"
+
+!macro fun[name args docstring . exprs]
+  "macro for defining a function"
+  if not:string?:docstring
+     abort "docstring argument for _fun_ was not a string"
+     nil
+  'let ,name
+    function ,args
+      begin @exprs
+    ,docstring
+
+!fun first[a]
+  "returns the first item of a list"
+  head:a
+!fun second[a]
+  "returns the second item of a list"
+  head:tail:a
+!fun third[a]
+  "returns the third item of a list"
+  head:tail:tail:a
+
+!fun symbol-or-number?[expr]
+  "returns true if _expr_ is a symbol or number"
+  or symbol?:expr
+     number?:expr
+
+!fun monomial?[expr]
+  "returns true if _expr_ is of the form _[pow x n]_"
+  if 
+     or not:list?:expr
+        not= length:expr 3
+     false
+     begin
+      let op  first:expr
+      let var second:expr
+      let exp third:expr
+      and
+        = op 'pow
+        symbol?:var
+        symbol-or-number?:exp
+        if number?:exp
+           > exp 0
+           true
+
+!fun sum?[expr]
+  "returns true if expr is a sum or subtraction"
+  and list?:expr
+      > length:expr 1
+      or [= head:expr '+]
+         [= head:expr '-]
+
+!fun mul?[expr]
+  "returns if expr is a multiplication"
+  and list?:expr
+      > length:expr 2
+      or [= head:expr '*]
+
+!fun sub[a b]
+  "subtracts _b_ from _a_, even if _a_ is a symbol"
+  if number?:a
+     - a b
+     '- ,a ,b
+
+!fun dx-sum[expr var]
+  "returns the derivative of a sum"
+  let op head:expr
+  let operands tail:expr
+  let v-dx
+    function [exp]
+      dx exp var
+  pair op
+       map v-dx operands
+
+!fun dx-monomial[expr var]
+  "returns the derivative of a monomial in the chosen variable"
+  let op  first:expr
+  let v   second:expr
+  let exp third:expr
+  if [= v var]
+     '* ,exp [pow x ,[sub exp 1]]
+     0
+
+!fun dx-symbol[expr var]
+  "returns the derivative of a single variable"
+  if [= expr var]
+     1
+     0
+
+!fun dx-nth-expr[expr var n]
+  "differentiates the nth expression"
+  !fun iter[exp var n i]
+    "dx-nth-expr iter helper"
+    case
+      nil?:exp nil
+      [= i n]
+        pair [dx head:exp var] tail:exp
+      true
+        pair head:exp [iter tail:exp var n [+ i 1]]
+  iter expr var n 0
+
+!fun cell[x]
+  "encapsulates _x_ in a pair with _nil_ tail"
+  pair x
+       nil
+
+# remember that:
+#    (fg)'   = f'g   + fg'
+#    (fgh)'  = f'gh  + fg'h  + fgh'
+#    (fghi)' = f'ghi + fg'hi + fgh'i + fghi'
+# this is generalizable for n multiplications.
+!fun dx-mul[expr var]
+  "returns the derivative of multiplication"
+  let e tail:expr
+  fold
+    function [out i]
+      append out
+        cell
+          pair '*
+               dx-nth-expr e var i
+    list '+
+    range length:e
+
+# TODO: IMPLEMENT SIMPLIFY
+!fun simplify[expr]
+  "simplifies an expression by removing zeroes and folding constants"
+  expr
+
+!fun dx[expr var]
+  "returns the derivative of _expr_"
+  let out
+    case
+      symbol?:expr   [dx-symbol expr var]
+      number?:expr   0
+      monomial?:expr [dx-monomial expr var]
+      sum?:expr      [dx-sum expr var]
+      mul?:expr      [dx-mul expr var]
+
+      true [abort "expression not recognized"]
+  simplify out
+
+!fun substitute[expr var value]
+  "returns _expr_ with any instance of _var_ substituted by _value_"
+  !fun blep[x]
+    case
+      [and symbol?:x [= x var]] value
+      list?:x [substitute x var value]
+      true    x
+  map
+    blep
+    expr
+
+let nl-print
+  function [first . args]
+    for
+      print
+      pair first args
+
+
+print "mul:"
+nl-print
+  dx '[* x [* 2 x] [* 3 x] [+ 1 x]] 'x
+  dx '[* x [* 2 x]] 'x
+  dx '[* 1 2 3 4] 'x
+  dx '[* [pow x 2] [pow x 3] [pow x 5]] 'x
+
+print "more:"
+nl-print
+  dx '[pow x 3] 'x
+  dx '[+ x 2 [pow x 3]] 'x
+  dx 'x 'x
+  dx 'b 'x
+  dx 1 'x

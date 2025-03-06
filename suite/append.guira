@@ -35,4 +35,22 @@ if
   abort "fail 6"
   nil
 
+# tests if this creates a circular list
+let a '[1 2]
+let b
+  append a a
+if
+  not= last:b 2
+  abort "fail 7"
+  nil
+
+# tests if the value of _c_ is preserved
+let c '[1 2 3]
+let d
+  append c [list 4 5 6]
+if
+  not= last:c 3
+  abort "fail 8"
+  nil
+
 print "append.guira: OK"

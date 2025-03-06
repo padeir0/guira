@@ -1,11 +1,11 @@
-_nil = """nil:
+_nil = """
     the empty list, anything non-nil is considered true."""
-_true = """true:
+_true = """
     alias to 1."""
-_false = """false:
+_false = """
     alias to nil"""
 
-_function = """function:
+_function = """
     form [args body] -> <function>
 
     creates a function that receives _args_, binds them
@@ -22,7 +22,7 @@ _form = ""
 
 _let = ""
 
-_if = """if:
+_if = """
     form [cond e1 e2] -> <any>
 
     evaluates _cond_, if it is non-nil,
@@ -31,8 +31,8 @@ _if = """if:
 
     example:
         if [even?:2]
-           print "two is even!"
-           abort "two is not odd!"
+           print \"two is even!\"
+           abort \"two is not odd!\"
 """
 
 _case = ""
@@ -41,7 +41,7 @@ _begin = ""
 
 _quote = ""
 
-_help = """help:
+_help = """
     form [arg . args] -> <string>
 
     returns a help message about the arguments.
@@ -55,7 +55,7 @@ _help = """help:
         help "warts"
             displays some known language warts
         help if
-            display help about the "if" form
+            display help about the \"if\" form
         help help
             displays this message"""
 
@@ -135,7 +135,7 @@ _apply = ""
 _print = ""
 _abort = ""
 
-_extra_intrinsics = """intrinsics:
+_extra_intrinsics = """
     values:
         nil true false
     special forms:
@@ -168,14 +168,13 @@ _extra_intrinsics = """intrinsics:
     misc:
         eval apply
         print abort
-        body args
-    """
+        body args"""
 
-_extra_syntax = """syntax:
+_extra_syntax = """
     Guira's syntax is indentation-sensitive. There are
     multiple ways to represent the same list.
 
-    Given the list "[f [a b] c d]", we can rewrite it as:
+    Given the list \"[f [a b] c d]\", we can rewrite it as:
         f [a b] c d
         f [a b] c
           d
@@ -193,17 +192,16 @@ _extra_syntax = """syntax:
         f [a b] \
           c d
         f a:b c d
-    The expression "[head [head list]]"
-    can be rewritten "head:head:list".
+    The expression \"[head [head list]]\"
+    can be rewritten \"head:head:list\".
 
     For more information, look up:
-        help "grammar"
-        help "syntax sugar"
-    """
+        help \"grammar\"
+        help \"syntax sugar\""""
 
-_extra_grammar =  """grammar:
+_extra_grammar =  """
     For more information, see
-        help "metasyntax"
+        help \"metasyntax\"
 
     Whitespace = '\\r' | ' ' | Comment.
     Comment = '#' {not_newline_char} '\\n'.
@@ -248,7 +246,7 @@ _extra_grammar =  """grammar:
     digit = /[0-9]/.
     digit_ = digit | '_'."""
 
-_extra_sugar = """sugar:
+_extra_sugar = """
     For convenience, the characters "!", ",", "@" and "'"
     are reserved as syntax sugar. The first one, the eval "!",
     is parsed as shown:
@@ -261,7 +259,7 @@ _extra_sugar = """sugar:
     "quote", "," for unquote and "@" for splice.
     """
 
-_extra_warts = """warts:
+_extra_warts = """
     Syntax sugar actually makes the syntax sligthly
     ambigous. For example:
         !a !b !c

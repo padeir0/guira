@@ -140,6 +140,9 @@ class Nil:
         return True
     def __le__(self, other):
         return self == other or self < other
+    # only a single copy of nil
+    def copy(self):
+        return nil
 
 nil = Nil()
 
@@ -153,6 +156,12 @@ def _sweeten(str):
     elif str == "splice":
         return "@"
     return ""
+
+def isnil(obj):
+    return type(obj) is Nil
+
+def notnil(obj):
+    return not (type(obj) is Nil)
 
 class List:
     def __init__(self, head, tail):
@@ -170,7 +179,7 @@ class List:
                 close = False
                 curr = curr.tail
         ls = []
-        while curr != nil:
+        while notnil(curr):
             if type(curr) is List:
                 ls += [curr.head._strlist()]
                 curr = curr.tail
@@ -187,20 +196,20 @@ class List:
         return self.range.start.column
 
     def compute_ranges(self):
-        if self.head != nil:
+        if notnil(self.head):
             self.range = self.head.compute_ranges()
         if self.range == None:
             self.range = Range(Position(0, 0),
                                Position(0, 0))
         curr = self.tail
-        while curr != nil:
+        while notnil(curr):
             if type(curr) is List:
                 head = curr.head
                 curr = curr.tail
             else:
                 head = curr
                 curr = nil
-            if head != nil:
+            if notnil(head):
                 hrange = head.compute_ranges()
 
                 self_start = self.range.start
@@ -218,18 +227,29 @@ class List:
         self.last().tail = other
         return self
 
+    def iscircular(self):
+        start = self
+        curr = self
+        while type(curr) is List and notnil(curr.tail):
+            if curr.tail is start:
+                return True
+            curr = curr.tail
+        return False
+
     def last(self):
         curr = self
-        if curr == nil:
+        if isnil(curr):
             return nil
-        while type(curr) is List and curr.tail != nil:
+        if self.iscircular():
+            raise Exception("internal: circular list")
+        while type(curr) is List and notnil(curr.tail):
             curr = curr.tail
         return curr
 
     def length(self):
         curr = self
         i = 0
-        while curr != nil:
+        while notnil(curr):
             if type(curr) is List:
                 i += 1
                 curr = curr.tail
@@ -243,7 +263,7 @@ class List:
 
         curr_self = self
         curr_other = other
-        while curr_self != nil and curr_other != nil:
+        while notnil(curr_self) and notnil(curr_other):
             if type(curr_self) != type(curr_other):
                 return False
             if type(curr_self) is List:
@@ -256,14 +276,14 @@ class List:
                     return False
                 curr_self = nil
                 curr_other = nil
-        if curr_self != nil or curr_other != nil:
+        if notnil(curr_self) or notnil(curr_other):
             return False
         return True
 
     def __hash__(self):
         out = 0xCAFE
         curr = self
-        while curr != nil:
+        while notnil(curr):
             if type(curr) is List:
                 out = combine_hash(out, curr.head.__hash__())
                 curr = curr.tail
@@ -278,7 +298,7 @@ class List:
 
         curr_self = self
         curr_other = other
-        while curr_self != nil and curr_other != nil:
+        while notnil(curr_self) and notnil(curr_other):
             if type(curr_self) != type(curr_other):
                 return type_less_than(self, other)
             if type(curr_self) is List:
@@ -296,7 +316,7 @@ class List:
                 curr_self = nil
                 curr_other = nil
 
-        if curr_self == nil and curr_other != nil:
+        if isnil(curr_self) and notnil(curr_other):
             # in this case, self.length() < other.length()
             return True
         return False
@@ -304,13 +324,32 @@ class List:
     def __le__(self, other):
         return self == other or self < other
 
+    def copy(self):
+        root = List(self.head, nil)
+        root.range = self.range
+        curr_out = root
+
+        curr = self.tail
+        while notnil(curr):
+            if type(curr) is List:
+                tail = List(curr.head, nil)
+                tail.range = curr.range
+
+                curr_out.tail = tail
+                curr_out = curr_out.tail
+                curr = curr.tail
+            else:
+                curr_out.tail = curr
+                curr = nil
+        return root
+
 def is_proper(ls):
-    if ls == nil:
+    if isnil(ls):
         return True
     if type(ls) != List:
         return False
     last = ls.last()
-    return last.tail == nil
+    return isnil(last.tail)
 
 def is_improper(ls):
     return not is_proper(ls)
@@ -340,6 +379,10 @@ class Symbol:
         return self.symbol < other.symbol
     def __le__(self, other):
         return self == other or self < other
+    def copy(self):
+        s = Symbol(self.symbol)
+        s.range = self.range
+        return s
 
 # implements a numerical tower
 # the tower will be:
@@ -385,6 +428,10 @@ class Number:
         return self.number < other.number
     def __le__(self, other):
         return self == other or self < other
+    def copy(self):
+        n = Number(self.string)
+        n.range = self.range
+        return n
 
 def _retype(self, other, prec):
     if type(self.number) is Decimal or type(other.number) is Decimal:
@@ -435,6 +482,10 @@ class String:
         return self.string < other.string
     def __le__(self, other):
         return self == other or self < other
+    def copy(self):
+        s = String(self.string)
+        s.range = self.range
+        return s
 
 class Intrinsic_Function:
     def __init__(self, name, wrapper):
@@ -454,6 +505,8 @@ class Intrinsic_Function:
         return id(self) < id(other)
     def __le__(self, other):
         return self == other or self < other
+    def copy(self):
+        return Intrinsic_Function(self.name, self.wrapper)
 
 class Function:
     def __init__(self, formal_args, body, parent_scope):
@@ -474,6 +527,8 @@ class Function:
         return id(self) < id(other)
     def __le__(self, other):
         return self == other or self < other
+    def copy(self):
+        return Function(self.formal_args, self.body, self.parent_scope)
 
 # Forms are first class. There are intrinsic forms:
 #     if  let  function  begin  quote  unquote  form
@@ -495,6 +550,8 @@ class Intrinsic_Form:
         return id(self) < id(other)
     def __le__(self, other):
         return self == other or self < other
+    def copy(self):
+        return Intrinsic_Form(self.name, self.wrapper)
 
 class Form:
     def __init__(self, formal_args, body, parent_scope):
@@ -515,6 +572,8 @@ class Form:
         return id(self) < id(other)
     def __le__(self, other):
         return self == other or self < other
+    def copy(self):
+        return Form(self.formal_args, self.body, self.parent_scope)
 
 def type_less_than(a, b):
     ta = type(a)
@@ -612,7 +671,7 @@ class ListBuilder:
         self.last = self.last.tail
 
     def append_list(self, list):
-        if list == nil:
+        if isnil(list):
             return
         if type(list) != List:
             raise Exception("expected list")
@@ -645,9 +704,10 @@ class ListBuilder:
         out = nil
         if self.root != None:
             out = self.root
-        if self.sugar == None:
-            return out
-        out = pylist_to_paired_list(self.sugar + [out])
+        if self.sugar != None:
+            out = pylist_to_paired_list(self.sugar + [out])
+        if out.iscircular():
+            raise Exception("circular list")
         return out
 
 def _last(list):

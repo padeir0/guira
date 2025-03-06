@@ -69,15 +69,14 @@ def math_symbols(scope):
     # FEAT: random      num num -> num
     pass
 
-# the REPL can preload these symbols
 def io_symbols(scope):
     # (open a file and read all the contents as a string)
-    # FEAT: file-read   string -> string
+    # TODO: FEAT: file-read   string -> string
     # (open a file and use a string to rewrite all the contents)
-    # FEAT: file-write  string string -> string/nil
-    # FEAT: file-append string string -> string/nil
+    # TODO: FEAT: file-write  string string -> string/nil
+    # TODO: FEAT: file-append string string -> string/nil
     # (to execute some shell code)
-    # FEAT: exec        string -> string
+    # TODO: FEAT: exec        string -> string
     # (loads a guira file into current scope)
-    # FEAT: load        string -> nil
+    # TODO: FEAT: load        string -> nil
     pass

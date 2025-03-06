@@ -19,6 +19,7 @@ def core_symbols(scope):
     add_form(scope, "begin",    begin_wrapper,    docs._begin)
     add_form(scope, "quote",    quote_wrapper,    docs._quote)
     add_form(scope, "help",     help_wrapper,     docs._help)
+    # TODO: FEAT: "import" special form to import intrinsic modules
 
     add_form(scope, "or",  or_wrapper,  docs._or)
     add_form(scope, "and", and_wrapper, docs._and)
@@ -80,8 +81,6 @@ def core_symbols(scope):
     add_function(scope, "unique",  unique_wrapper,  docs._unique)
     add_function(scope, "sort",    sort_wrapper,    docs._sort)
     add_function(scope, "range",   range_wrapper,   docs._range)
-    add_function(scope, "args",    args_wrapper,    docs._args)
-    add_function(scope, "body",    body_wrapper,    docs._body)
     # TODO: THINK: we need a procedure like "lookup" to optimize list lookups to be O(1) with a hashmap in the future
 
     add_function(scope, "concatenate",   concatenate_wrapper,   docs._concatenate)
@@ -93,8 +92,12 @@ def core_symbols(scope):
     add_function(scope, "eval",  eval_wrapper,   docs._eval)
     add_function(scope, "apply",  apply_wrapper, docs._apply)
 
+    # TODO: IMPROVE: remove these from guira-core and place it on guira-io
     add_function(scope, "print", print_wrapper, docs._print)
     add_function(scope, "abort", abort_wrapper, docs._abort)
+
+    add_function(scope, "args",    args_wrapper,    docs._args)
+    add_function(scope, "body",    body_wrapper,    docs._body)
     return
 
 ### UTILS
@@ -737,7 +740,7 @@ def append_wrapper(ctx, list):
         if not (type(curr.head) in [List, Nil]):
             err = ctx.error("expected list or nil", curr.range)
             return Result(None, err)
-        builder.append_list(curr.head)
+        builder.append_list(curr.head.copy())
         if builder.improper() and curr.tail != nil:
             err = ctx.error("impossible to append to improper list", curr.range)
             return Result(None, err)
@@ -1337,11 +1340,11 @@ def help_wrapper(ctx, list):
             if res.failed():
                 err = ctx.error("symbol not found", curr.range)
                 return Result(None, err)
-            out += res.value + "\n"
+            out += head.symbol + ":\n    " + res.value + "\n"
         elif type(head) is String:
-            str = head.string 
+            str = head.string
             if str in docs._extra_docs:
-               out += docs._extra_docs[str] + "\n"
+               out += str + ":\n    " + docs._extra_docs[str] + "\n"
             else:
                 err = ctx.error("documentation not found", curr.range)
                 return Result(None, err)
