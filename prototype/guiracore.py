@@ -81,7 +81,14 @@ def core_symbols(scope):
     add_function(scope, "unique",  unique_wrapper,  docs._unique)
     add_function(scope, "sort",    sort_wrapper,    docs._sort)
     add_function(scope, "range",   range_wrapper,   docs._range)
-    # TODO: THINK: we need a procedure like "lookup" to optimize list lookups to be O(1) with a hashmap in the future
+    # looks if any item in the given list is equal to _a_
+    # TODO: FEATURE: find             ls:list a:any -> found?:bool
+    # looks up a list of pairs (k v), if a = k, returns v; if not found, returns nil
+    # TODO: FEATURE: retrieve         ls:list a:any -> b:any
+    # same as map, but _iter_ receives two arguments: the element and the index of the element.
+    # TODO: FEATURE: enumerate        iter:function [ls:list] -> ls:list
+    # partitions list based on predicate
+    # TODO: FEATURE: partition        pred:function [ls:list] -> ls:list
 
     add_function(scope, "concatenate",   concatenate_wrapper,   docs._concatenate)
     add_function(scope, "slice",         slice_wrapper,         docs._slice)
@@ -164,7 +171,7 @@ def check_num_args(ctx, list, num):
 
 def _len_between(list, start, end):
     len = list.length()
-    return start <= len or len <= end
+    return start <= len and len <= end
 
 def check_num_args_between(ctx, list, start, end):
     if (list == nil or

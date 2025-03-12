@@ -706,7 +706,7 @@ class ListBuilder:
             out = self.root
         if self.sugar != None:
             out = pylist_to_paired_list(self.sugar + [out])
-        if out.iscircular():
+        if out != nil and out.iscircular():
             raise Exception("circular list")
         return out
 

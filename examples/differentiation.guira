@@ -1,3 +1,5 @@
+####### UTILITARIES
+
 let macro
   form [name args docstring . exprs]
     if not:string?:docstring
@@ -18,6 +20,19 @@ let macro
       begin @exprs
     ,docstring
 
+!fun compose [f g]
+  "composes two functions"
+  function x
+    f:g:x
+
+let partition
+  function [f ls]
+    pair
+      filter f ls
+      pair 
+        filter [compose not f] ls
+        nil
+
 !fun first[a]
   "returns the first item of a list"
   head:a
@@ -27,6 +42,17 @@ let macro
 !fun third[a]
   "returns the third item of a list"
   head:tail:tail:a
+
+!fun cell[x]
+  "encapsulates _x_ in a pair with _nil_ tail"
+  pair x
+       nil
+
+!fun sub[a b]
+  "subtracts _b_ from _a_, even if _a_ is a symbol"
+  if number?:a
+     - a b
+     '- ,a ,b
 
 !fun symbol-or-number?[expr]
   "returns true if _expr_ is a symbol or number"
@@ -52,35 +78,304 @@ let macro
            true
 
 !fun sum?[expr]
-  "returns true if expr is a sum or subtraction"
+  "returns _true_ if _expr_ is a sum or subtraction"
   and list?:expr
       > length:expr 1
-      or [= head:expr '+]
-         [= head:expr '-]
+      = head:expr '+
 
 !fun mul?[expr]
-  "returns if expr is a multiplication"
+  "returns if _expr_ is a product"
   and list?:expr
       > length:expr 2
       or [= head:expr '*]
 
-!fun sub[a b]
-  "subtracts _b_ from _a_, even if _a_ is a symbol"
-  if number?:a
-     - a b
-     '- ,a ,b
+let nl-print
+  function [first . args]
+    for
+      print
+      pair first args
 
-!fun dx-sum[expr var]
+!macro assert[expr value]
+  "asserts if _expr_ is equal to _value_"
+  let e !expr
+  if [not= e value]
+     abort "condition failed: " expr "with value" e "is not equal" value
+     nil
+
+####### CONSTANT FOLDING
+
+!fun c-fold-monomial[expr]
+  "folds constant monomials inside _expr_"
+  let var second:expr
+  let exp third:expr
+  case
+    [= exp 0] 1
+    [= exp 1] var
+    true      expr
+
+!fun c-fold-sum[expr]
+  "folds constants in _expr_ as sums"
+  let body
+    map
+      c-fold
+      tail:expr
+  let res
+    partition
+      number?
+      body
+  let new-body
+    if nil?:head:res
+      head:tail:res
+      pair
+        fold + 0 head:res
+        head:tail:res
+  if 
+    = length:new-body 1  # trivial sum
+    head:new-body
+    if
+      = head:new-body 0  # ignore zeroes
+      pair '+ tail:new-body
+      pair '+ new-body
+
+!fun c-fold-mul[expr]
+  "folds constants in _expr_ as products"
+  let body
+    map
+      c-fold
+      tail:expr
+  let res
+    partition
+      number?
+      body
+  let new-body
+    if nil?:head:res
+      head:tail:res
+      pair
+        fold * 1 head:res
+        head:tail:res
+  case
+    [= length:new-body 1] head:new-body
+    [= head:new-body 1]   head:tail:new-body
+    [= head:new-body 0]   0
+    true                  [pair '* new-body]
+
+!fun c-fold[expr]
+  "folds constants in _expr_"
+  case
+    monomial?:expr [c-fold-monomial expr]
+    sum?:expr      [c-fold-sum expr]
+    mul?:expr      [c-fold-mul expr]
+    true           expr
+
+####### TRIVIAL
+
+# [pow a 1] -> a
+# [pow a 0] -> 1
+!fun trivial-monomial[expr]
+  "simplifies trivial monomials"
+  let var second:expr
+  let exp third:expr
+  case
+    [= exp 0] 1
+    [= exp 1] var
+    true      expr
+
+# [* a]     -> a
+# [+ a]     -> a
+!fun trivial-bin[expr]
+  "simplifies trivial sums and product"
+  let body
+    map
+      trivial
+      tail:expr
+  if
+    = length:body 1
+    head:body
+    expr
+
+!fun trivial[expr]
+  "simplifies trivial operations"
+  case
+    monomial?:expr trivial-monomial:expr
+    sum?:expr  trivial-bin:expr
+    mul?:expr  trivial-bin:expr
+    true       expr
+
+####### GROUPING
+
+!fun find-eq[ls x]
+  "finds terms in _ls_ equal to _x_"
+  filter
+    function y
+      = x y
+    ls
+
+!fun group-sum[expr]
+  "groups identical terms in sums"
+  let body
+    map group tail:expr
+  let new-body
+    sort
+      map
+        function x
+          list
+            '*
+            length:[find-eq body x]
+            x
+        unique:body
+  pair '+ new-body
+
+
+!fun group-mul-symbols[symbols]
+  "groups a symbol only list inside products"
+  !fun group-symbol[x]
+    "groups terms equal to _x_"
+    list
+      'pow
+      x
+      length:[find-eq symbols x]
+  sort
+    map
+      group-symbol
+      unique:symbols
+
+!fun group-mul[expr]
+  "groups identical terms in products"
+  let body
+    map group tail:expr
+  let p
+    partition symbol? body
+
+  let uniq
+    if nil?:head:p
+      second:p
+      append
+        group-mul-symbols:first:p
+        second:p
+  pair '* uniq
+
+!fun group[expr]
+  "simplifies an expression by grouping"
+  case
+    sum?:expr      group-sum:expr
+    mul?:expr      group-mul:expr
+    true           expr
+
+####### FACTORIZATION
+
+# not full factorization, we only factor common terms
+!fun factorize[expr] #TODO
+  "simplifies an expression by factorization"
+  expr
+
+####### JOIN ASSOCIATIVE
+
+!fun join-assoc-pred[expr pred?]
+  "joins associative products together"
+  let operator
+    head:expr
+  let body
+    map
+      join-assoc
+      tail:expr
+  pair operator
+    fold
+      function [a b]
+        append
+          a
+          if pred?:b
+            tail:b
+            cell b
+      nil
+      body
+
+!fun join-assoc[expr]
+  "joins associative operations together"
+  case
+    sum?:expr      [join-assoc-pred expr sum?]
+    mul?:expr      [join-assoc-pred expr mul?]
+    true           expr
+
+####### CANONICALIZATION
+
+!fun canon-bin[expr]
+  "canonicalizes products and sums"
+  let operator
+    head:expr
+  let body
+    map
+      canonicalize
+      tail:expr
+  pair
+    operator
+    sort body
+
+!fun canonicalize[expr]
+  "creates a canonical representation of expr"
+  if [or sum?:expr mul?:expr]
+    canon-bin expr
+    expr
+
+####### TERM COUNTING
+
+!fun num-terms[expr]
+  "count the total number of terms in an expression (includes symbols and numbers)"
+  case
+    nil?:expr              0
+    symbol-or-number?:expr 1
+    true
+      fold
+        function [a b]
+          + a [num-terms b]
+        0
+        expr
+
+####### SIMPLIFICATION
+
+# we force the system to be normalizing
+# by only accepting a series of transformations
+# if it reduces the number of terms
+let rules
+  list canonicalize \
+       group trivial\
+       c-fold join-assoc trivial \
+       factorize trivial \
+       canonicalize
+
+!fun simp-rules[expr ruleset]
+  "simplifies an expression by consecutive application of rules from the ruleset"
+  if nil?:ruleset
+    expr
+    begin
+      let f head:ruleset
+      if function?:f
+        simp-rules f:expr tail:ruleset
+        abort "rule" f "was not a function"
+
+!fun simplify[expr]
+  "simplifies an expression by consecutive application of rules from the global \"rules\" list"
+  let a
+    simp-rules expr rules
+  let b
+    simp-rules a rules
+  if
+    = a b
+    b
+    simplify b
+
+####### DIFFERENTIATION
+
+!fun diff-sum[expr var]
   "returns the derivative of a sum"
   let op head:expr
   let operands tail:expr
-  let v-dx
+  let v-diff
     function [exp]
-      dx exp var
+      diff exp var
   pair op
-       map v-dx operands
+       map v-diff operands
 
-!fun dx-monomial[expr var]
+!fun diff-monomial[expr var]
   "returns the derivative of a monomial in the chosen variable"
   let op  first:expr
   let v   second:expr
@@ -89,93 +384,116 @@ let macro
      '* ,exp [pow x ,[sub exp 1]]
      0
 
-!fun dx-symbol[expr var]
+!fun diff-symbol[expr var]
   "returns the derivative of a single variable"
   if [= expr var]
      1
      0
 
-!fun dx-nth-expr[expr var n]
+!fun diff-nth-expr[expr var n]
   "differentiates the nth expression"
   !fun iter[exp var n i]
-    "dx-nth-expr iter helper"
+    "diff-nth-expr iter helper"
     case
       nil?:exp nil
       [= i n]
-        pair [dx head:exp var] tail:exp
+        pair [diff head:exp var] tail:exp
       true
         pair head:exp [iter tail:exp var n [+ i 1]]
   iter expr var n 0
-
-!fun cell[x]
-  "encapsulates _x_ in a pair with _nil_ tail"
-  pair x
-       nil
 
 # remember that:
 #    (fg)'   = f'g   + fg'
 #    (fgh)'  = f'gh  + fg'h  + fgh'
 #    (fghi)' = f'ghi + fg'hi + fgh'i + fghi'
-# this is generalizable for n multiplications.
-!fun dx-mul[expr var]
-  "returns the derivative of multiplication"
+# this is generalizable for n terms.
+!fun diff-mul[expr var]
+  "returns the derivative of products"
   let e tail:expr
   fold
     function [out i]
       append out
         cell
           pair '*
-               dx-nth-expr e var i
+               diff-nth-expr e var i
     list '+
     range length:e
 
-# TODO: IMPLEMENT SIMPLIFY
-!fun simplify[expr]
-  "simplifies an expression by removing zeroes and folding constants"
-  expr
-
-!fun dx[expr var]
+!fun diff[expr var]
   "returns the derivative of _expr_"
   let out
     case
-      symbol?:expr   [dx-symbol expr var]
+      symbol?:expr   [diff-symbol expr var]
       number?:expr   0
-      monomial?:expr [dx-monomial expr var]
-      sum?:expr      [dx-sum expr var]
-      mul?:expr      [dx-mul expr var]
+      monomial?:expr [diff-monomial expr var]
+      sum?:expr      [diff-sum expr var]
+      mul?:expr      [diff-mul expr var]
 
       true [abort "expression not recognized"]
   simplify out
 
+####### SUBSTITUTION
+
 !fun substitute[expr var value]
   "returns _expr_ with any instance of _var_ substituted by _value_"
-  !fun blep[x]
-    case
-      [and symbol?:x [= x var]] value
-      list?:x [substitute x var value]
-      true    x
+  let blep
+    function [x]
+      case
+        [and symbol?:x [= x var]] value
+        list?:x [substitute x var value]
+        true    x
   map
     blep
     expr
 
-let nl-print
-  function [first . args]
-    for
-      print
-      pair first args
+####### TRANSLATE
+# we write:
+#   [* ~1 a] instead of [- a]
+#   [+ a [* ~1 b] [* ~1 c]] instead of [- a b c]
 
+####### REVERSE TRANSLATE
+# we undo the things we did in translation.
 
-print "mul:"
-nl-print
-  dx '[* x [* 2 x] [* 3 x] [+ 1 x]] 'x
-  dx '[* x [* 2 x]] 'x
-  dx '[* 1 2 3 4] 'x
-  dx '[* [pow x 2] [pow x 3] [pow x 5]] 'x
+####### TESTS
 
-print "more:"
-nl-print
-  dx '[pow x 3] 'x
-  dx '[+ x 2 [pow x 3]] 'x
-  dx 'x 'x
-  dx 'b 'x
-  dx 1 'x
+assert [num-terms '1] 1
+assert [num-terms 'x] 1
+assert [num-terms '[* 1 x]] 3
+assert [num-terms '[* 1 2 x 4]] 5
+assert [num-terms '[* 1 [+ 2 3]]] 5
+assert [num-terms '[* 1 [+ 2 [pow x 1]]]] 7
+assert [num-terms '[+ x [* x [pow x 1]]]] 7
+
+assert [join-assoc '[* 1 [* 2 3]]] [* 1 2 3]
+assert [join-assoc '[+ 1 [+ 2 3]]] [+ 1 2 3]
+assert [join-assoc '[* 1 [* 2 3] [* 4 5]]] [* 1 2 3 4 5]
+assert [join-assoc '[+ 1 [+ 2 3] [+ 4 5]]] [+ 1 2 3 4 5]
+
+assert [canonicalize '[+ b 2 1]] [+ 1 2 b]
+assert [canonicalize '[+ b a c]] [+ a b c]
+assert [canonicalize '[* [pow b n] [+ b a]]] [* [+ a b] [pow b n]]
+
+assert [group '[+ x x y y]] [+ [* 2 x] [* 2 y]]
+assert [group '[+ x x x y]] [+ [* 1 y] [* 3 x]]
+assert [group '[* x x y y]] [* [pow x 2] [pow y 2]]
+assert [group '[* x x x y]] [* [pow x 3] [pow y 1]]
+
+assert [simplify '[* [+ x x] [+ x x]]] [* 4 [pow x 2]]
+assert [simplify '[* [+ x x x] [+ x x]]] [* 6 [pow x 2]]
+
+assert [diff '[* 1 2 3 4] 'x] 0
+assert [diff '[* 2 x x] 'x] [* 4 x]
+assert [diff '[* x [* 2 x]] 'x] [* 4 x]
+
+# print "mul:"
+# nl-print
+#   diff '[* x [* 2 x] [* 3 x] [+ 1 x]] 'x
+#   diff '[* [pow x 2] [pow x 3] [pow x 5]] 'x
+# 
+# print "more:"
+# nl-print
+#   diff '[pow x 3] 'x
+#   diff '[+ x 2 [pow x 3]] 'x
+#   diff 'x 'x
+#   diff 'b 'x
+#   diff 1 'x

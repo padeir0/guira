@@ -1,0 +1,39 @@
+let cell
+  function x
+    pair x nil
+
+let flatten
+  function ls
+    fold
+      function [a b]
+        append
+          a
+          if list?:b
+             b
+             cell b
+      nil
+      map
+        function x
+          if list?:x
+            flatten x
+            x
+        ls
+
+if
+  not= [flatten '[1]] '[1]
+  abort "fail 1"
+  nil
+if
+  not= [flatten '[1 2 3 4 5]] '[1 2 3 4 5]
+  abort "fail 2"
+  nil
+if
+  not= [flatten '[1 [2 3] [4 5]]] '[1 2 3 4 5]
+  abort "fail 3"
+  nil
+if
+  not= [flatten '[[1 2] [3 [4 5] 6]]] '[1 2 3 4 5 6]
+  abort "fail 4"
+  nil
+
+print "flatten.guira: OK"

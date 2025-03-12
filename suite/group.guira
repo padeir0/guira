@@ -1,0 +1,58 @@
+let macro
+  form [name args . exprs]
+   'let ,name
+     form ,args
+       begin @exprs
+
+!macro fun[name args . exprs]
+  'let ,name
+    function ,args
+      begin @exprs
+
+!fun cell[x]
+  pair x
+       nil
+
+!fun group[ls]
+  if not:list?:ls
+     abort "expected list, got: " ls
+     nil
+  !fun find-duplicates[x]
+    filter
+      function y
+        = x y
+      ls
+  sort
+    map
+      function x
+        pair
+          x
+          cell:length:find-duplicates:x
+      unique:ls
+
+if
+  not=
+    group '[a a b b]
+    '[a 2] [b 2]
+  abort "fail 1"
+  nil
+if
+  not=
+    group '[a b b b c c]
+    '[a 1] [b 3] [c 2]
+  abort "fail 2"
+  nil
+if
+  not=
+    group '[a b b b b]
+    '[a 1] [b 4]
+  abort "fail 3"
+  nil
+if
+  not=
+    group '[[a b] [a b] b b]
+    '[b 2] [[a b] 2]
+  abort "fail 4"
+  nil
+
+print "group.guira: OK"
