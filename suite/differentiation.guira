@@ -59,24 +59,6 @@ let partition
   or symbol?:expr
      number?:expr
 
-!fun monomial?[expr]
-  "returns true if _expr_ is of the form _[pow x n]_"
-  if 
-     or not:list?:expr
-        not= length:expr 3
-     false
-     begin
-      let op  first:expr
-      let var second:expr
-      let exp third:expr
-      and
-        = op 'pow
-        symbol?:var
-        symbol-or-number?:exp
-        if number?:exp
-           > exp 0
-           true
-
 !fun sum?[expr]
   "returns _true_ if _expr_ is a sum or subtraction"
   and list?:expr
@@ -103,15 +85,6 @@ let nl-print
      nil
 
 ####### CONSTANT FOLDING
-
-!fun c-fold-monomial[expr]
-  "folds constant monomials inside _expr_"
-  let var second:expr
-  let exp third:expr
-  case
-    [= exp 0] 1
-    [= exp 1] var
-    true      expr
 
 !fun c-fold-sum[expr]
   "folds constants in _expr_ as sums"
@@ -162,23 +135,11 @@ let nl-print
 !fun c-fold[expr]
   "folds constants in _expr_"
   case
-    monomial?:expr [c-fold-monomial expr]
     sum?:expr      [c-fold-sum expr]
     mul?:expr      [c-fold-mul expr]
     true           expr
 
 ####### TRIVIAL
-
-# [pow a 1] -> a
-# [pow a 0] -> 1
-!fun trivial-monomial[expr]
-  "simplifies trivial monomials"
-  let var second:expr
-  let exp third:expr
-  case
-    [= exp 0] 1
-    [= exp 1] var
-    true      expr
 
 # [* a]     -> a
 # [+ a]     -> a
@@ -196,7 +157,6 @@ let nl-print
 !fun trivial[expr]
   "simplifies trivial operations"
   case
-    monomial?:expr trivial-monomial:expr
     sum?:expr  trivial-bin:expr
     mul?:expr  trivial-bin:expr
     true       expr
@@ -225,53 +185,42 @@ let nl-print
         unique:body
   pair '+ new-body
 
-
-!fun group-mul-symbols[symbols]
-  "groups a symbol only list inside products"
-  !fun group-symbol[x]
-    "groups terms equal to _x_"
-    list
-      'pow
-      x
-      length:[find-eq symbols x]
-  sort
-    map
-      group-symbol
-      unique:symbols
-
 !fun group-mul[expr]
-  "groups identical terms in products"
+  "recursively apply group to products too"
   let body
     map group tail:expr
-  let p
-    partition symbol? body
-
-  let uniq
-    if nil?:head:p
-      second:p
-      append
-        group-mul-symbols:first:p
-        second:p
-  pair '* uniq
+  pair '* body
 
 !fun group[expr]
-  "simplifies an expression by grouping"
+  "simplifies a sum by grouping"
   case
-    sum?:expr      group-sum:expr
-    mul?:expr      group-mul:expr
-    true           expr
+    mul?:expr group-mul:expr
+    sum?:expr group-sum:expr
+    true      expr
 
 ####### FACTORIZATION
 
+# let expr = [+ [* a c] [* a d] [* b c] [* b d]]
+# find-factorable [expr]: [a b c d]
+# filter-term [expr a]:
+#   e_1 = [[* a c] [* a d]]
+#   e_2 = [[* b c] [* b d]]
+# create-factor: [* a [+ c d]]
+# filter-term [e_2 b]:
+#   e_1 = [[* b c] [* b d]]
+#   e_2 = nil
+# create-factor: [* b [+ c d]]
+# join-factors: [+ [* a [+ c d]] [* b [+ c d]]]
+
 # not full factorization, we only factor common terms
-!fun factorize[expr] #TODO
-  "simplifies an expression by factorization"
+!fun factorize[expr] # TODO
+  "simplifies a sum by factorization"
   expr
 
 ####### JOIN ASSOCIATIVE
 
 !fun join-assoc-pred[expr pred?]
-  "joins associative products together"
+  "joins associative products and sums together"
   let operator
     head:expr
   let body
@@ -375,15 +324,6 @@ let rules
   pair op
        map v-diff operands
 
-!fun diff-monomial[expr var]
-  "returns the derivative of a monomial in the chosen variable"
-  let op  first:expr
-  let v   second:expr
-  let exp third:expr
-  if [= v var]
-     '* ,exp [pow x ,[sub exp 1]]
-     0
-
 !fun diff-symbol[expr var]
   "returns the derivative of a single variable"
   if [= expr var]
@@ -425,7 +365,6 @@ let rules
     case
       symbol?:expr   [diff-symbol expr var]
       number?:expr   0
-      monomial?:expr [diff-monomial expr var]
       sum?:expr      [diff-sum expr var]
       mul?:expr      [diff-mul expr var]
 
@@ -446,14 +385,6 @@ let rules
     blep
     expr
 
-####### TRANSLATE
-# we write:
-#   [* ~1 a] instead of [- a]
-#   [+ a [* ~1 b] [* ~1 c]] instead of [- a b c]
-
-####### REVERSE TRANSLATE
-# we undo the things we did in translation.
-
 ####### TESTS
 
 assert [num-terms '1] 1
@@ -461,8 +392,8 @@ assert [num-terms 'x] 1
 assert [num-terms '[* 1 x]] 3
 assert [num-terms '[* 1 2 x 4]] 5
 assert [num-terms '[* 1 [+ 2 3]]] 5
-assert [num-terms '[* 1 [+ 2 [pow x 1]]]] 7
-assert [num-terms '[+ x [* x [pow x 1]]]] 7
+assert [num-terms '[* 1 [+ 2 [* x 1]]]] 7
+assert [num-terms '[+ x [* x [* x 1]]]] 7
 
 assert [join-assoc '[* 1 [* 2 3]]] [* 1 2 3]
 assert [join-assoc '[+ 1 [+ 2 3]]] [+ 1 2 3]
@@ -471,29 +402,27 @@ assert [join-assoc '[+ 1 [+ 2 3] [+ 4 5]]] [+ 1 2 3 4 5]
 
 assert [canonicalize '[+ b 2 1]] [+ 1 2 b]
 assert [canonicalize '[+ b a c]] [+ a b c]
-assert [canonicalize '[* [pow b n] [+ b a]]] [* [+ a b] [pow b n]]
+assert [canonicalize '[* [+ a b n] [+ b a]]] [* [+ a b] [+ a b n]]
 
 assert [group '[+ x x y y]] [+ [* 2 x] [* 2 y]]
 assert [group '[+ x x x y]] [+ [* 1 y] [* 3 x]]
-assert [group '[* x x y y]] [* [pow x 2] [pow y 2]]
-assert [group '[* x x x y]] [* [pow x 3] [pow y 1]]
+assert [group '[* x x y y]] [* x x y y]
 
-assert [simplify '[* [+ x x] [+ x x]]] [* 4 [pow x 2]]
-assert [simplify '[* [+ x x x] [+ x x]]] [* 6 [pow x 2]]
+assert [simplify '[* [+ x x] [+ x x]]]
+       [* 4 x x]
+assert [simplify '[* [+ x x x] [+ x x]]]
+       [* 6 x x]
+
+#'assert [simplify '[+ [* 2 y y] [* 2 y x]]] # TODO
+#       [* 2 y [+ y x]]
 
 assert [diff '[* 1 2 3 4] 'x] 0
 assert [diff '[* 2 x x] 'x] [* 4 x]
 assert [diff '[* x [* 2 x]] 'x] [* 4 x]
+assert [diff 'x 'x] 1
+assert [diff '1 'x] 0
+assert [diff '[* ~1 x] 'x] ~1
+assert [diff '[+ [* 2 x x y] [* ~1 x y] ] 'x]
+       [+ [* ~1 y] [* 4 x y]]
 
-# print "mul:"
-# nl-print
-#   diff '[* x [* 2 x] [* 3 x] [+ 1 x]] 'x
-#   diff '[* [pow x 2] [pow x 3] [pow x 5]] 'x
-# 
-# print "more:"
-# nl-print
-#   diff '[pow x 3] 'x
-#   diff '[+ x 2 [pow x 3]] 'x
-#   diff 'x 'x
-#   diff 'b 'x
-#   diff 1 'x
+print "differentiation.guira: OK"

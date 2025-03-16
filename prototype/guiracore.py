@@ -19,7 +19,7 @@ def core_symbols(scope):
     add_form(scope, "begin",    begin_wrapper,    docs._begin)
     add_form(scope, "quote",    quote_wrapper,    docs._quote)
     add_form(scope, "help",     help_wrapper,     docs._help)
-    # TODO: FEAT: "import" special form to import intrinsic modules
+    # TODO: FEATURE: "import" special form to import intrinsic modules
 
     add_form(scope, "or",  or_wrapper,  docs._or)
     add_form(scope, "and", and_wrapper, docs._and)
@@ -85,6 +85,8 @@ def core_symbols(scope):
     # TODO: FEATURE: find             ls:list a:any -> found?:bool
     # looks up a list of pairs (k v), if a = k, returns v; if not found, returns nil
     # TODO: FEATURE: retrieve         ls:list a:any -> b:any
+    # attaches a hashmap to the list, so that retrieve and find are O(1) operations.
+    # TODO: FEATURE: dict             list -> list
     # same as map, but _iter_ receives two arguments: the element and the index of the element.
     # TODO: FEATURE: enumerate        iter:function [ls:list] -> ls:list
     # partitions list based on predicate

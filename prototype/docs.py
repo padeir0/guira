@@ -265,13 +265,16 @@ _extra_warts = """
         !a !b !c
     Is parsed as:
         eval [a [eval b] [eval c]]
-    Since the first "!" is consumed by the I-Expression
+    Since the first \"!\" is consumed by the I-Expression
     production, and the subsequent ones are consumed by the Pair
     production.
+
     For more information, see:
         help "grammar"
         help "syntax"
-    """
+
+    If you type \"-1\", it is treated as an identifier.
+    The number is \"~1\"."""
 
 _extra_docs = {
     "intrinsics": _extra_intrinsics,
