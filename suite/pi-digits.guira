@@ -1,0 +1,50 @@
+let precision 100
+
+max-precision precision
+
+let pi
+  3.1415926535_8979323846_2643383279_5028841971_6939937510_5820974944_5923078164_0628620899_8628034825_3421170679_8214808651_3282306647_0938446095_5058223172_5359408128_4811174502_8410270193_8521105559_6446229489_5493038196_4428810975_6659334461_2847564823_3786783165_2712019091_4564856692_3460348610_4543266482
+
+let abs
+  function a
+    if [< a 0]
+      - a
+      a
+let distance
+  function [a b]
+    abs [- a b]
+
+let close-enough?
+  function [a b]
+    < [distance a b] [/ 1 precision]
+
+let pow
+  function [x y]
+    if [= y 0]
+      1
+      * x [pow x [- y 1]]
+
+let term
+  function k
+    * [/ 1 [pow 16 k]]
+      + [/ 4  [+ [* 8 k] 1]]
+        [/ ~2 [+ [* 8 k] 4]]
+        [/ ~1 [+ [* 8 k] 5]]
+        [/ ~1 [+ [* 8 k] 6]]
+
+let series
+  function n
+    fold
+      function [a b]
+        + a
+          term b
+      0
+      range n
+
+let approx
+  to-inexact
+    series precision
+
+if [close-enough? approx pi]
+  print "pi-digits.guira: OK"
+  abort "fail"

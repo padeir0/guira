@@ -452,8 +452,7 @@ def to_frac(num, n):
 
 def to_dec(num, n):
     if type(num) is Fraction:
-        dec = Decimal(num.numerator) / Decimal(num.denominator)
-        return dec.quantize(Decimal(10) ** -n, rounding=ROUND_HALF_EVEN)
+        return Decimal(num.numerator) / Decimal(num.denominator)
     if type(num) is int:
         return Decimal(num)
     return Decimal(num)

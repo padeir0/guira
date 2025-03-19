@@ -2,7 +2,7 @@ from core import *
 from evaluator import eval, apply, Scope, Intrinsic_Function, Function, Form, Intrinsic_Form
 from util import is_valid_identifier, is_valid_number, convert_number, string_to_list
 from fractions import Fraction
-from decimal import Decimal
+from decimal import Decimal, getcontext
 import scopekind
 import docs
 
@@ -19,7 +19,6 @@ def core_symbols(scope):
     add_form(scope, "begin",    begin_wrapper,    docs._begin)
     add_form(scope, "quote",    quote_wrapper,    docs._quote)
     add_form(scope, "help",     help_wrapper,     docs._help)
-    # TODO: FEATURE: "import" special form to import intrinsic modules
 
     add_form(scope, "or",  or_wrapper,  docs._or)
     add_form(scope, "and", and_wrapper, docs._and)
@@ -85,28 +84,76 @@ def core_symbols(scope):
     # TODO: FEATURE: find             ls:list a:any -> found?:bool
     # looks up a list of pairs (k v), if a = k, returns v; if not found, returns nil
     # TODO: FEATURE: retrieve         ls:list a:any -> b:any
-    # attaches a hashmap to the list, so that retrieve and find are O(1) operations.
+    # dict is a combination of unique and sort for lists with a specific structure.
+    # it may attach a hashmap to the list, so that retrieve and find are O(1) operations,
+    # or it may just instruct retrieve and find that the list is sorted and unique.
     # TODO: FEATURE: dict             list -> list
     # same as map, but _iter_ receives two arguments: the element and the index of the element.
     # TODO: FEATURE: enumerate        iter:function [ls:list] -> ls:list
     # partitions list based on predicate
     # TODO: FEATURE: partition        pred:function [ls:list] -> ls:list
+    # TODO: FEATURE: zip              list . list -> list
+    # TODO: FEATURE: unzip            list -> list
+    # TODO: FEATURE: max              any . any -> any
+    # TODO: FEATURE: min              any . any -> any
 
     add_function(scope, "concatenate",   concatenate_wrapper,   docs._concatenate)
     add_function(scope, "slice",         slice_wrapper,         docs._slice)
     add_function(scope, "string-length", string_length_wrapper, docs._string_length)
     add_function(scope, "split",         split_wrapper,         docs._split)
     add_function(scope, "join",          join_wrapper,          docs._join)
+    # (returns the start of the substring, 'nil' if not found)
+    # TODO: FEATURE: substring?  string string -> num/nil
+    # TODO: FEATURE: prefix?     string string -> bool
+    # TODO: FEATURE: suffix?     string string -> bool
+    # creates a list of characters (codepoints)
+    # TODO: FEATURE: char-list   string -> list
+    # (source string, substring, replacement) -> string
+    # TODO: FEATURE: replace     string string string -> string
+
+    # MATH
+    # TODO: FEATURE: pi constant (must fit in inline number)
+    # TODO: FEATURE: euler constant (must fit in inline number)
+    # TODO: FEATURE: floor       num -> num
+    # TODO: FEATURE: ceiling     num -> num
+    # TODO: FEATURE: round       num -> num
+    # TODO: FEATURE: abs         num -> num
+    # (truncates a number to a max of N digits, if N = 0, returns an integer)
+    # TODO: FEATURE: truncate    num num -> num
+    # TODO: FEATURE: sqrt        num -> num
+    # TODO: FEATURE: sin         num -> num
+    # TODO: FEATURE: cos         num -> num
+    # TODO: FEATURE: tan         num -> num
+    # TODO: FEATURE: asin        num -> num
+    # TODO: FEATURE: acos        num -> num
+    # TODO: FEATURE: atan        num -> num
+    # TODO: FEATURE: pow         num num -> num
+    # computes log to arbitrary integer base
+    # TODO: FEATURE: log         num num -> num
+    # TODO: FEATURE: gcd         num . num -> num
+    # TODO: FEATURE: lcm         num . num -> num
+    # TODO: FEATURE: factorize   num -> list
+    # (returns random integer between N and M
+    # TODO: FEATURE: random      num num -> num
 
     add_function(scope, "eval",  eval_wrapper,   docs._eval)
     add_function(scope, "apply",  apply_wrapper, docs._apply)
 
-    # TODO: IMPROVE: remove these from guira-core and place it on guira-io
     add_function(scope, "print", print_wrapper, docs._print)
     add_function(scope, "abort", abort_wrapper, docs._abort)
+    # open a file and read all the contents as a string
+    # TODO: FEATURE: file-read   string -> string/error
+    # open/create a file and use a string to rewrite all the contents
+    # TODO: FEATURE: file-write  string string -> error/nil
+    # open/create a file and use a string to append to it.
+    # TODO: FEATURE: file-append string string -> error/nil
+    # (to execute some shell code)
+    # TODO: FEATURE: exec        string -> string/error
+    # (loads a guira file into current scope)
+    # TODO: FEATURE: load        string -> nil/error
 
-    add_function(scope, "args",    args_wrapper,    docs._args)
-    add_function(scope, "body",    body_wrapper,    docs._body)
+    add_function(scope, "args", args_wrapper, docs._args)
+    add_function(scope, "body", body_wrapper, docs._body)
     return
 
 ### UTILS
@@ -380,6 +427,7 @@ def max_precision_wrapper(ctx, list):
     head = list.head
     if type(head) is Number and type(head.number) is int:
         ctx.precision = head.number
+        getcontext().prec = head.number
         return Result(None, None)
     err = ctx.error("expected integer", list.range)
     return Result(None, err)

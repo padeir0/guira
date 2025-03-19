@@ -11,6 +11,8 @@ class Scope:
     def add_symbol(self, name, obj, docs):
         if type(docs) != str:
             raise Exception("internal: docs were not strings")
+        if name in self.dict:
+            raise Exception("name already declared: " + name)
         self.dict[name] = obj
         self.docs[name] = docs
     def set_scope_name(self, name):
