@@ -1,6 +1,6 @@
 # Guira
 
-Guira is a pure, self-documenting Lisp with lightweight syntax and first-class macros.
+Guira is a pure Lisp meant for scripting.
 Here's a hello-world program:
 
 ```
@@ -52,4 +52,4 @@ print primes
 
 The current prototype is implemented in Python with no attempt at optimizations,
 which means it is quite slow. Nevertheless, there are a few examples in the
-`examples` folder.
+`examples` and `suite` folder.

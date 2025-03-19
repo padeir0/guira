@@ -221,5 +221,4 @@ digit_ = digit | '_'.
 After the prototype is finished, i will rewrite everything
 in C99 for performance reasons. This will also allow me to use Emscripten
 to compile the interpreter to WASM and create a playground, which is much
-needed. The C99 interpreter will also be designed with embedding in mind,
-although not for constrained environments.
+needed.
