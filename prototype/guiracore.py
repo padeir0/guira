@@ -5,6 +5,7 @@ from fractions import Fraction
 from decimal import Decimal, getcontext
 import scopekind
 import docs
+import math
 
 def core_symbols(scope):
     add_value(scope, "nil",   nil,   docs._nil)
@@ -36,6 +37,9 @@ def core_symbols(scope):
     add_function(scope, "inexact?",  pred_inexact_wrapper,  docs._pred_inexact)
     add_function(scope, "proper?",   pred_proper_wrapper,   docs._pred_proper)
     add_function(scope, "improper?", pred_improper_wrapper, docs._pred_improper)
+    # TODO: FEATURE: integer?
+    # TODO: FEATURE: rational?
+    # TODO: FEATURE: decimal?
 
     add_function(scope, "to-string",  to_string_wrapper, docs._to_string)
     add_function(scope, "to-symbol",  to_symbol_wrapper, docs._to_symbol)
@@ -112,12 +116,12 @@ def core_symbols(scope):
     # TODO: FEATURE: replace     string string string -> string
 
     # MATH
-    # TODO: FEATURE: pi constant (must fit in inline number)
-    # TODO: FEATURE: euler constant (must fit in inline number)
-    # TODO: FEATURE: floor       num -> num
-    # TODO: FEATURE: ceiling     num -> num
-    # TODO: FEATURE: round       num -> num
-    # TODO: FEATURE: abs         num -> num
+    add_function(scope, "floor",    floor_wrapper,    docs._floor)
+    add_function(scope, "ceiling",  ceiling_wrapper,  docs._ceiling)
+    add_function(scope, "round",    round_wrapper,    docs._round)
+    add_function(scope, "absolute", absolute_wrapper, docs._absolute)
+    add_function(scope, "pow",      pow_wrapper,      docs._pow)
+
     # (truncates a number to a max of N digits, if N = 0, returns an integer)
     # TODO: FEATURE: truncate    num num -> num
     # TODO: FEATURE: sqrt        num -> num
@@ -127,7 +131,6 @@ def core_symbols(scope):
     # TODO: FEATURE: asin        num -> num
     # TODO: FEATURE: acos        num -> num
     # TODO: FEATURE: atan        num -> num
-    # TODO: FEATURE: pow         num num -> num
     # computes log to arbitrary integer base
     # TODO: FEATURE: log         num num -> num
     # TODO: FEATURE: gcd         num . num -> num
@@ -141,16 +144,17 @@ def core_symbols(scope):
 
     add_function(scope, "print", print_wrapper, docs._print)
     add_function(scope, "abort", abort_wrapper, docs._abort)
+    # TODO: FEATURE: file-exists? string -> bool
     # open a file and read all the contents as a string
-    # TODO: FEATURE: file-read   string -> string/error
+    # TODO: FEATURE: file-read   string -> string
     # open/create a file and use a string to rewrite all the contents
-    # TODO: FEATURE: file-write  string string -> error/nil
+    # TODO: FEATURE: file-write  string string -> nil
     # open/create a file and use a string to append to it.
-    # TODO: FEATURE: file-append string string -> error/nil
+    # TODO: FEATURE: file-append string string -> nil
     # (to execute some shell code)
-    # TODO: FEATURE: exec        string -> string/error
+    # TODO: FEATURE: exec        string -> (stdout, stderr)
     # (loads a guira file into current scope)
-    # TODO: FEATURE: load        string -> nil/error
+    # TODO: FEATURE: load        string -> nil
 
     add_function(scope, "args", args_wrapper, docs._args)
     add_function(scope, "body", body_wrapper, docs._body)
@@ -1463,4 +1467,64 @@ def body_wrapper(ctx, list):
         return res
 
     out = list.head.body
+    return Result(out, None)
+
+### MATH
+def ceiling_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+    res = expect(ctx, list, Number)
+    if res.failed():
+        return res
+    num = list.head
+    out = Number(math.ceil(num.number))
+    return Result(out, None)
+
+def round_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+    res = expect(ctx, list, Number)
+    if res.failed():
+        return res
+    num = list.head
+    out = Number(round(num.number))
+    return Result(out, None)
+
+def floor_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+    res = expect(ctx, list, Number)
+    if res.failed():
+        return res
+    num = list.head
+    out = Number(math.floor(num.number))
+    return Result(out, None)
+
+def absolute_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 1)
+    if res.failed():
+        return res
+    res = expect(ctx, list, Number)
+    if res.failed():
+        return res
+    num = list.head
+    out = Number(abs(num.number))
+    return Result(out, None)
+
+def pow_wrapper(ctx, list):
+    res = check_num_args(ctx, list, 2)
+    if res.failed():
+        return res
+    res = expect(ctx, list, Number)
+    if res.failed():
+        return res
+    res = expect(ctx, list.tail, Number)
+    if res.failed():
+        return res
+    a = list.head
+    b = list.tail.head
+    out = Number(pow(a.number, b.number))
     return Result(out, None)

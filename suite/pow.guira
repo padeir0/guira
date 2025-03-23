@@ -1,0 +1,30 @@
+if
+  not= [pow 2 2] 4
+  abort "fail 1"
+  nil
+if
+  not= [pow 4 1/2] 2
+  abort "fail 2"
+  nil
+if
+  not= [pow 4 0.5] 2
+  abort "fail 3"
+  nil
+if
+  not= [pow 1 100] 1
+  abort "fail 4"
+  nil
+if
+  not= [pow 9 1/2] 3
+  abort "fail 5"
+  nil
+if
+  not= [pow 2 ~1] 0.5
+  abort "fail 6"
+  nil
+if
+  not= [pow 2 ~2] 0.25
+  abort "fail 7"
+  nil
+
+print "pow.guira: OK"

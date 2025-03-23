@@ -14,15 +14,17 @@ let distance
   function [a b]
     abs [- a b]
 
-let close-enough?
-  function [a b]
-    < [distance a b] [/ 1 precision]
-
 let pow
   function [x y]
     if [= y 0]
       1
       * x [pow x [- y 1]]
+
+let min-error [/ 1 [pow 10 precision]]
+
+let close-enough?
+  function [a b]
+    < [distance a b] min-error
 
 let term
   function k

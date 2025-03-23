@@ -1,0 +1,29 @@
+# simple example of non-fatal error handling
+
+let str-fmt
+  function [ls]
+    join
+      map
+        to-string
+        ls
+      " "
+
+let error
+  function [a . x]
+    list 'error
+         str-fmt [pair a x]
+
+let error?
+  function x
+    and list?:x
+        = head:x 'error
+
+let may-div
+  function [a b]
+    if [= b 0]
+      error "divide by zero" a "/" b
+      / a b
+
+print
+  may-div 1 2
+  may-div 1 0

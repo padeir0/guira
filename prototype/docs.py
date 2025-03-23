@@ -135,6 +135,12 @@ _apply = ""
 _print = ""
 _abort = ""
 
+_floor = ""
+_ceiling = ""
+_round = ""
+_absolute = ""
+_pow = ""
+
 _extra_intrinsics = """
     values:
         nil true false
@@ -165,6 +171,9 @@ _extra_intrinsics = """
     string:
         join concatenate format slice
         split string-length
+    math:
+        absolute round ceiling
+        floor pow
     misc:
         eval apply
         print abort
@@ -283,4 +292,3 @@ _extra_docs = {
     "warts": _extra_warts,
     "syntax sugar": _extra_sugar,
 }
-

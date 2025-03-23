@@ -1,0 +1,30 @@
+if
+  not= absolute:1 1
+  abort "fail 1"
+  nil
+if
+  not= absolute:~1 1
+  abort "fail 2"
+  nil
+if
+  not= absolute:0 0
+  abort "fail 3"
+  nil
+if
+  not= absolute:1/2 1/2
+  abort "fail 4"
+  nil
+if
+  not= absolute:~1/2 1/2
+  abort "fail 5"
+  nil
+if
+  not= absolute:0.5 0.5
+  abort "fail 6"
+  nil
+if
+  not= absolute:~0.5 0.5
+  abort "fail 7"
+  nil
+
+print "absolute.guira: OK"
